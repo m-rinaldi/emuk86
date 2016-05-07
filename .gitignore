@@ -1,6 +1,9 @@
 # Image files
 *.img
 
+# Timestamp files
+*.timestamp
+
 # Object files
 *.o
 *.ko

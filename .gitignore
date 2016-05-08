@@ -1,6 +1,9 @@
 # Image files
 *.img
 
+# Bochs' log files
+*.log
+
 # Timestamp files
 *.timestamp
 

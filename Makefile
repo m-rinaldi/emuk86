@@ -1,6 +1,5 @@
 CC := ~/opt/cross/bin/i686-elf-gcc
 LD := ~/opt/cross/bin/i686-elf-ld
-AS := ~/opt/cross/bin/i686-elf-as
 
 IECHO   := echo -n
 FECHO   := echo
@@ -34,9 +33,6 @@ mount-img = sudo losetup --offset 1048576 --sizelimit $(hdd-img-size) $2 $1
 .PHONY: all clean
 
 all: $(TARGET) hdd.img
-
-%.o: %.S
-	$(AS) -c $< -o $@
 
 # implicit rule for image creation
 dd      :=  dd

@@ -33,7 +33,7 @@ mount-img = sudo losetup --offset 1048576 --sizelimit $(hdd-img-size) $2 $1
 
 .PHONY: all clean
 
-all: $(TARGET) update-hdd-img.timestamp
+all: $(TARGET) hdd.img
 
 %.o: %.S
 	$(AS) -c $< -o $@
@@ -49,17 +49,29 @@ dd_of   =   $@
 	@$(FECHO) done
 
 linker-script := kernel.ld
-
 # TODO add (header) dependencies automatically
 $(TARGET): kmain.o startup.o $(linker-script)
 	@$(LD) $< -T $(linker-script)
 
-# TODO use hdd.img's mtime instead
-# this target keeps track of the last time hdd.img was updated
-update-hdd-img.timestamp: loop-dev := $(shell losetup --find)
-update-hdd-img.timestamp: dir      =  $(word 1,$|)
-update-hdd-img.timestamp: $(TARGET) $(if $(wildcard ${hdd-img}),,${hdd-img})
-update-hdd-img.timestamp: | mount
+hdd.img: loop-dev := $(shell losetup --find)
+# each double-colon rule should specify a recipe, otherwise an implicit rule
+# will be used if one applies
+# Append a semicolon after the prerequisites in order to prevent the target
+# from getting the implicit recipe
+hdd.img:: $(if $(wildcard hdd.img),,hdd-unformatted.img);
+  # double-color rules' recipe are always executed if there is no prerequisite	
+  ifeq ($(wildcard hdd.img),)
+	@$(IECHO) formatting '$<'...
+	@$(call mount-img,$<,$(loop-dev))
+	@sudo mkfs.fat -F 16 -n EMUK86 $(loop-dev) >/dev/null
+	@sudo losetup --detach $(loop-dev)
+	@$(MV) $< $@
+	@$(FECHO) done
+  endif
+
+hdd.img: loop-dev := $(shell losetup --find)
+hdd.img: dir      =  $(word 1,$|)
+hdd.img:: $(TARGET) | mount
 	@$(IECHO) updating hdd image '$(hdd-img)'...
 	@$(call mount-img,$(hdd-img),$(loop-dev))
 	@sudo mount $(loop-dev) $(dir)
@@ -73,17 +85,8 @@ update-hdd-img.timestamp: | mount
 mount:
 	@mkdir $@
 
-hdd.img: loop-dev := $(shell losetup --find)
-hdd.img: hdd-unformatted.img
-	@$(IECHO) formatting '$<'...
-	@$(call mount-img,$<,$(loop-dev))
-	@sudo mkfs.fat -F 16 -n EMUK86 $(loop-dev) >/dev/null
-	@sudo losetup --detach $(loop-dev)
-	@$(MV) $< $@
-	@$(FECHO) done
-
 hdd-unformatted.img: hdd-unpartitioned.img
-	@$(IECHO) partitioning '$@'...
+	@$(IECHO) partitioning '$<'...
 	@printf "n\np\n\n\n\nw" | fdisk $< >/dev/null $(check-status)
 	@$(MV) $< $@
 	@$(FECHO) done

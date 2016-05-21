@@ -7,11 +7,17 @@
 # Timestamp files
 *.timestamp
 
+# VIM's swap files
+*.swp
+
 # Object files
 *.o
 *.ko
 *.obj
 *.elf
+
+# Dependency files
+*.d
 
 # Precompiled Headers
 *.gch

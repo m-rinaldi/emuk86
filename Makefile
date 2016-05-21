@@ -1,23 +1,6 @@
-CC := ~/opt/cross/bin/i686-elf-gcc
-LD := ~/opt/cross/bin/i686-elf-ld
-
-IECHO   := echo -n
-FECHO   := echo
-MV      := mv -f
-
-CFLAGS      = -c -ffreestanding -std=gnu11 $(optimization) $(warnings)
-CPPFLAGS    += $(addprefix -I ,$(include-dirs))
-
-include-dirs    := include/
-optimization    := -O2
-warnings        := -Wall -Wextra -Wmissing-prototypes           \
-                   -pedantic                                    \
-                   -Wredundant-decls -Winline                   \
-                   -Wconversion -Wstrict-prototypes
-
 # since both operators && and || have the same precedence and associativity is
 # left to right, place parenthesis around
-check-status := || ($(FECHO) 'Fail' && exit 1)
+check-status := || (echo 'Fail' && exit 1)
 
 TARGET  := kernel.elf
 hdd-img := hdd.img
@@ -39,10 +22,10 @@ dd      :=  dd
 dd_if   :=  /dev/zero
 dd_of   =   $@
 %.img:
-	@$(IECHO) generating image '$@'...
+	@echo -n generating image '$@'...
 	@$(dd) if=$(dd_if) of=$(dd_of) bs=$(DD_BS) count=$(DD_COUNT) 2>/dev/null \
         $(check-status)
-	@$(FECHO) done
+	@echo done
 
 linker-script := kernel.ld
 # TODO add (header) dependencies automatically
@@ -57,18 +40,18 @@ hdd.img: loop-dev := $(shell losetup --find)
 hdd.img:: $(if $(wildcard hdd.img),,hdd-unformatted.img);
   # double-color rules' recipe are always executed if there is no prerequisite	
   ifeq ($(wildcard hdd.img),)
-	@$(IECHO) formatting '$<'...
+	@echo -n formatting '$<'...
 	@$(call mount-img,$<,$(loop-dev))
 	@sudo mkfs.fat -F 16 -n EMUK86 $(loop-dev) >/dev/null
 	@sudo losetup --detach $(loop-dev)
 	@$(MV) $< $@
-	@$(FECHO) done
+	@echo done
   endif
 
 hdd.img: loop-dev := $(shell losetup --find)
 hdd.img: dir      =  $(word 1,$|)
 hdd.img:: $(TARGET) | mount
-	@$(IECHO) updating hdd image '$(hdd-img)'...
+	@echo -n updating hdd image '$(hdd-img)'...
 	@$(call mount-img,$(hdd-img),$(loop-dev))
 	@sudo mount $(loop-dev) $(dir)
 	@sudo cp -f $(TARGET) $(dir) || \
@@ -76,22 +59,19 @@ hdd.img:: $(TARGET) | mount
 	@sudo umount $(dir)
 	@sudo losetup --detach $(loop-dev)
 	@touch $@
-	@$(FECHO) done
+	@echo done
 
 mount:
 	@mkdir $@
 
 hdd-unformatted.img: hdd-unpartitioned.img
-	@$(IECHO) partitioning '$<'...
+	@echo -n partitioning '$<'...
 	@printf "n\np\n\n\n\nw" | fdisk $< >/dev/null $(check-status)
 	@$(MV) $< $@
-	@$(FECHO) done
+	@echo done
 
 # 32MiB
 hdd-unpartitioned.img:  DD_BS       :=  $(hdd-img-sector-size)
 hdd-unpartitioned.img:  DD_COUNT    :=  $(hdd-img-sectors)
 	
-clean:
-	@$(IECHO) cleaning...
-	@$(RM) *.o *.img
-	@$(FECHO) done
+include common.mk

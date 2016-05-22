@@ -35,6 +35,7 @@ objects := $(patsubst %.S,%.o,$(sources:%.c=%.o))
 	@$(COMPILE.S) -o $@ $<
 	@echo 'done'
 
+.PHONY: clean
 clean:
 	@echo -n cleaning...
 	@$(RM) *.o *.d *.img

@@ -38,7 +38,7 @@ objects := $(patsubst %.S,%.o,$(sources:%.c=%.o))
 .PHONY: clean
 clean:
 	@echo -n cleaning...
-	@$(RM) *.o *.d *.img
+	@$(RM) *.o *.d *.elf *.img
 	@echo done
 
 -include $(objects:%.o=%.d)

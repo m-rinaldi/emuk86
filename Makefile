@@ -1,13 +1,22 @@
-modules := 
+modules := lib drivers
 
 mod2obj = $(1:%=$1/%.o)
+mod2clean = $(1:%=clean-%)
 
-define add-mod-phony
+define add-mod-build-phony
     $(eval .PHONY: $(call mod2obj,$1))
 endef
 
-define add-mod-target
+define add-mod-build-target
     $(eval $(call mod2obj,$1):; $$(MAKE) -C $1/)
+endef
+
+define add-mod-clean-phony
+    $(eval .PHONY: $(call mod2clean,$1))
+endef
+
+define add-mod-clean-target
+    $(eval $(call mod2clean,$1):; $$(MAKE) -C $1/ clean)
 endef
 
 # since both operators && and || have the same precedence and associativity is
@@ -26,13 +35,20 @@ hdd-img-size        := $(shell expr $(hdd-img-sectors) '*' \
 mount-img = sudo losetup --offset 1048576 --sizelimit $(hdd-img-size) $2 $1
 
 .PHONY: all clean
-
 module-objects := $(foreach mod,$(modules),$(call mod2obj,$(mod)))
 all: $(target) $(module-objects) hdd.img
+include common.mk
 
-# add a phony target for each module
-$(foreach mod,$(modules),$(call add-mod-phony,$(mod)))
-$(foreach mod,$(modules),$(call add-mod-target,$(mod)))
+# add a phony target for building each module
+$(foreach mod,$(modules),$(call add-mod-build-phony,$(mod)))
+$(foreach mod,$(modules),$(call add-mod-build-target,$(mod)))
+
+.PHONY: clean-modules
+clean: clean-modules
+clean-modules: $(foreach mod,$(modules),$(call mod2clean,$(mod)))
+# add a phony target for cleaning each module
+$(foreach mod,$(modules),$(call add-mod-clean-phony,$(mod)))
+$(foreach mod,$(modules),$(call add-mod-clean-target,$(mod)))
 
 linker-script := kernel.ld
 # TODO add (header) dependencies automatically
@@ -92,5 +108,3 @@ hdd-unformatted.img: hdd-unpartitioned.img
 # 32MiB
 hdd-unpartitioned.img:  DD_BS       :=  $(hdd-img-sector-size)
 hdd-unpartitioned.img:  DD_COUNT    :=  $(hdd-img-sectors)
-	
-include common.mk

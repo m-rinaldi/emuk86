@@ -16,7 +16,8 @@ optimization    := -O2
 warnings        := -Wall -Wextra -Wmissing-prototypes           \
                    -pedantic                                    \
                    -Wredundant-decls -Winline                   \
-                   -Wconversion -Wstrict-prototypes
+                   -Wconversion -Wstrict-prototypes             \
+                   -Werror
 
 ifdef HOSTED
   CPPFLAGS += -DHOSTED

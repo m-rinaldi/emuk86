@@ -1,8 +1,20 @@
+modules := 
+
+mod2obj = $(1:%=$1/%.o)
+
+define add-mod-phony
+    $(eval .PHONY: $(call mod2obj,$1))
+endef
+
+define add-mod-target
+    $(eval $(call mod2obj,$1):; $$(MAKE) -C $1/)
+endef
+
 # since both operators && and || have the same precedence and associativity is
 # left to right, place parenthesis around
 check-status := || (echo 'Fail' && exit 1)
 
-TARGET  := kernel.elf
+target  := kernel.elf
 hdd-img := hdd.img
 
 hdd-img-sectors     := 65536
@@ -15,7 +27,19 @@ mount-img = sudo losetup --offset 1048576 --sizelimit $(hdd-img-size) $2 $1
 
 .PHONY: all clean
 
-all: $(TARGET) hdd.img
+module-objects := $(foreach mod,$(modules),$(call mod2obj,$(mod)))
+all: $(target) $(module-objects) hdd.img
+
+# add a phony target for each module
+$(foreach mod,$(modules),$(call add-mod-phony,$(mod)))
+$(foreach mod,$(modules),$(call add-mod-target,$(mod)))
+
+linker-script := kernel.ld
+# TODO add (header) dependencies automatically
+$(target): kmain.o startup.o $(linker-script) $(module-objects)
+	@echo -n linking $@...
+	@$(LD) $< $(module-objects) -T $(linker-script)
+	@echo done
 
 # implicit rule for image creation
 dd      :=  dd
@@ -26,11 +50,6 @@ dd_of   =   $@
 	@$(dd) if=$(dd_if) of=$(dd_of) bs=$(DD_BS) count=$(DD_COUNT) 2>/dev/null \
         $(check-status)
 	@echo done
-
-linker-script := kernel.ld
-# TODO add (header) dependencies automatically
-$(TARGET): kmain.o startup.o $(linker-script)
-	@$(LD) $< -T $(linker-script)
 
 hdd.img: loop-dev := $(shell losetup --find)
 # each double-colon rule should specify a recipe, otherwise an implicit rule
@@ -50,11 +69,11 @@ hdd.img:: $(if $(wildcard hdd.img),,hdd-unformatted.img);
 
 hdd.img: loop-dev := $(shell losetup --find)
 hdd.img: dir      =  $(word 1,$|)
-hdd.img:: $(TARGET) | mount
+hdd.img:: $(target) | mount
 	@echo -n updating hdd image '$(hdd-img)'...
 	@$(call mount-img,$(hdd-img),$(loop-dev))
 	@sudo mount $(loop-dev) $(dir)
-	@sudo cp -f $(TARGET) $(dir) || \
+	@sudo cp -f $(target) $(dir) || \
         (sudo umount $(dir) && sudo losetup --detach $(loop-dev))
 	@sudo umount $(dir)
 	@sudo losetup --detach $(loop-dev)

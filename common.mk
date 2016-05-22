@@ -6,6 +6,8 @@ MV := mv -f
 CFLAGS      += -c -ffreestanding -nostdlib -std=gnu11
 CFLAGS      += $(optimization) $(warnings)
 
+# do not add a rule for explicitly building each dependency file
+# update dependency file <--> update object file
 CPPFLAGS    += -MD -MP
 CPPFLAGS    += $(addprefix -I ,$(includes))
 

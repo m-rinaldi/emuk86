@@ -1,20 +1,31 @@
-modules := lib drivers
+modules := lib x86 mm drivers
 
-mod2obj = $(1:%=$1/%.o)
+mod2obj   = $(1:%=$1/%.o)
+mod2build = $(1:%=build-%)
 mod2clean = $(1:%=clean-%)
 
+# $(call add-mod-build-phony,module-name)
 define add-mod-build-phony
-    $(eval .PHONY: $(call mod2obj,$1))
+    $(eval .PHONY: $(call mod2build,$1))
 endef
 
+# $(call add-mod-build-target,module-name)
 define add-mod-build-target
-    $(eval $(call mod2obj,$1):; $$(MAKE) -C $1/)
+    $(eval $(call mod2build,$1):; $$(MAKE) -C $1/)
 endef
 
+# $(call connect-mod-build,module-name)
+# empty recipe
+define connect-mod-build
+    $(eval $(call mod2obj,$1): $(call mod2build,$1);)
+endef
+
+# $(call add-mod-clean-phony,module-name)
 define add-mod-clean-phony
     $(eval .PHONY: $(call mod2clean,$1))
 endef
 
+# $(call add-mod-clean-target,module-name)
 define add-mod-clean-target
     $(eval $(call mod2clean,$1):; $$(MAKE) -C $1/ clean)
 endef
@@ -34,18 +45,24 @@ hdd-img-size        := $(shell expr $(hdd-img-sectors) '*' \
 # $(call mount-img image,device)
 mount-img = sudo losetup --offset 1048576 --sizelimit $(hdd-img-size) $2 $1
 
-.PHONY: all clean
-module-objects := $(foreach mod,$(modules),$(call mod2obj,$(mod)))
-all: $(target) $(module-objects) hdd.img
+.PHONY: default
+default: all
+
 include common.mk
 
+.PHONY: all
+all: $(target) hdd.img
+
+module-objects := $(foreach mod,$(modules),$(call mod2obj,$(mod)))
 # add a phony target for building each module
 $(foreach mod,$(modules),$(call add-mod-build-phony,$(mod)))
 $(foreach mod,$(modules),$(call add-mod-build-target,$(mod)))
+$(foreach mod,$(modules),$(call connect-mod-build,$(mod)))
 
-.PHONY: clean-modules
+.PHONY: clean clean-modules
 clean: clean-modules
 clean-modules: $(foreach mod,$(modules),$(call mod2clean,$(mod)))
+
 # add a phony target for cleaning each module
 $(foreach mod,$(modules),$(call add-mod-clean-phony,$(mod)))
 $(foreach mod,$(modules),$(call add-mod-clean-target,$(mod)))

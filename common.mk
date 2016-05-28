@@ -11,13 +11,18 @@ CFLAGS      += $(optimization) $(warnings)
 CPPFLAGS    += -MD -MP
 CPPFLAGS    += $(addprefix -I ,$(includes))
 
+ifdef OPTIMIZATION
+    optimization    := $(OPTIMIZATION)
+else
+    optimization    := -O2
+endif
+
 includes        := include/
-optimization    := -O2
 warnings        := -Wall -Wextra -Wmissing-prototypes           \
                    -pedantic                                    \
                    -Wredundant-decls -Winline                   \
                    -Wconversion -Wstrict-prototypes             \
-                   -Werror
+                   #-Werror
 
 ifdef HOSTED
   CPPFLAGS += -DHOSTED
@@ -39,7 +44,7 @@ objects := $(patsubst %.S,%.o,$(sources:%.c=%.o))
 .PHONY: clean
 clean:
 	@echo -n cleaning...
-	@$(RM) *.o *.d *.elf *.img
+	@$(RM) *.o *.d *.log *.elf *.img
 	@echo done
 
 -include $(objects:%.o=%.d)

@@ -32,7 +32,7 @@ typedef struct {
 // TODO CR4: it contains several flags controlling advanced processor's features
 
 /*******************************************************************************
- functions for CRX manipulation
+ functions for CRx manipulation
 *******************************************************************************/
 cr0_t cr0_get(void);
 cr2_t cr2_get(void);

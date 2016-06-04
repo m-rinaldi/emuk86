@@ -71,8 +71,7 @@ linker-script := kernel.ld
 # TODO add (header) dependencies automatically
 $(target): kmain.o startup.o $(linker-script) $(module-objects)
 	@echo -n linking $@...
-	# output name in linker script
-	@$(LINK.o) $< $(module-objects) -Wl,-T $(linker-script)
+	@$(LINK.o) -o $@ $< $(module-objects) -Wl,-T $(linker-script)
 	@echo done
 
 # implicit rule for image creation

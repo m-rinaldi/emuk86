@@ -8,6 +8,6 @@ includes := ../include/
 
 $(module-object): $(objects)
 	@echo -n generating $@...
-	@$(LD) --relocatable $(objects) -o $@
+	@$(LINK.o) -Wl,--relocatable $(objects) -o $@
 	@echo done
 

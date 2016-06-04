@@ -71,7 +71,8 @@ linker-script := kernel.ld
 # TODO add (header) dependencies automatically
 $(target): kmain.o startup.o $(linker-script) $(module-objects)
 	@echo -n linking $@...
-	@$(LD) $< $(module-objects) -T $(linker-script)
+	# output name in linker script
+	@$(LINK.o) $< $(module-objects) -Wl,-T $(linker-script)
 	@echo done
 
 # implicit rule for image creation
@@ -80,7 +81,7 @@ dd_if   :=  /dev/zero
 dd_of   =   $@
 %.img:
 	@echo -n generating image '$@'...
-	@$(dd) if=$(dd_if) of=$(dd_of) bs=$(DD_BS) count=$(DD_COUNT) 2>/dev/null \
+	@$(dd) if=$(dd_if) of=$(dd_of) bs=$(dd_bs) count=$(dd_count) 2>/dev/null \
         $(check-status)
 	@echo done
 
@@ -123,5 +124,5 @@ hdd-unformatted.img: hdd-unpartitioned.img
 	@echo done
 
 # 32MiB
-hdd-unpartitioned.img:  DD_BS       :=  $(hdd-img-sector-size)
-hdd-unpartitioned.img:  DD_COUNT    :=  $(hdd-img-sectors)
+hdd-unpartitioned.img:  dd_bs       :=  $(hdd-img-sector-size)
+hdd-unpartitioned.img:  dd_count    :=  $(hdd-img-sectors)

@@ -1,9 +1,9 @@
 CC := ~/opt/cross/bin/i686-elf-gcc
-LD := ~/opt/cross/bin/i686-elf-ld
 
 MV := mv -f
 
-CFLAGS      += -c -ffreestanding -nostdlib -std=gnu11
+LDFLAGS     += -nostdlib 
+CFLAGS      += -ffreestanding -std=gnu11
 CFLAGS      += $(optimization) $(warnings)
 
 # do not add a rule for explicitly building each dependency file

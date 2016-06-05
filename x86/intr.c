@@ -1,5 +1,5 @@
-#include <intr.h>
-#include <idt.h>
+#include <x86/intr.h>
+#include <x86/idt.h>
 
 #define IRQ_OFFSET  0x20U
 // TODO rename to intr_register_irq_handler()

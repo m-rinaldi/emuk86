@@ -1,14 +1,14 @@
 /*
  * IDT: Interrupt Description Table
  */
-#include <idt.h>
+#include <x86/idt.h>
+
+#include <x86/intr.h>
+#include <eflags.h>
+#include <x86/faults.h>
 
 #include <stddef.h>
 #include <stdint.h>
-
-#include <intr.h>
-#include <eflags.h>
-#include <faults.h>
 
 #define IDT_CS              0x0008
 #define IDT_NUM_GATES_MAX   0x100
@@ -30,6 +30,7 @@ typedef struct {
 
 // entries in the IDT are called "gates"
 typedef struct {
+    // offset is a virtual address
     uint16_t        offset_lo;
     uint16_t        selector;
     uint8_t         zero;

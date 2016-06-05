@@ -1,6 +1,14 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include <x86/intr.h>
+#include <pic.h>
+#include <x86/idt.h>
+#include <x86/gdt.h>
+#include <console.h>
+#include <stdio.h>
+#include <mm/paging.h>
+
 #define VGA_MEM_ADDR    0xb8000
 #define COLS            80
 #define ROWS            25
@@ -23,13 +31,42 @@ static void bsod(void)
                 (uint16_t) ATTR << 8 | (0x00ff & vga_mem[_xy2idx(i, j)]);
 }
 
+static void _do_page_fault(void)
+{
+    volatile uint8_t *p;
+
+    p = 0;
+    *p = 113;
+}
+
 void kmain(void) __attribute__((noreturn));
 void kmain(void)
 {
     bsod();
 
-    // TODO intr_disable();
+    intr_disable();
+    
+    gdt_init();
+    idt_init();
+    pic_init();
+    
+    console_init();
+    printf("emuk86\n");
+    printf("------\n");
 
+    printf("initializing paging...");
+    if (paging_init()) {
+        printf("paging_init() error\n");
+        goto end;
+    }
+    printf("ok\n");
+    
+
+    _do_page_fault();
+
+
+    //intr_enable();
+end:
     while (1)
         ;
 }

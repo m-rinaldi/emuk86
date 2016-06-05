@@ -4,7 +4,7 @@
 #include <x86/idt.h>
 
 #include <x86/intr.h>
-#include <eflags.h>
+#include <x86/eflags.h>
 #include <x86/faults.h>
 
 #include <stddef.h>

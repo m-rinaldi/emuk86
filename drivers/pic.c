@@ -1,5 +1,7 @@
 #include <pic.h>
-#include <io.h>
+
+#include <x86/io.h>
+
 #include <stdint.h>
 #include <console.h>
 

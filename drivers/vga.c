@@ -1,6 +1,7 @@
 #include <vga.h>
+#include <x86/io.h>
+
 #include <stdint.h>
-#include <io.h>
 
 #define BASE_ADDR               0xb8000
 

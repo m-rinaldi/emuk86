@@ -1,4 +1,4 @@
-#include <eflags.h>
+#include <x86/eflags.h>
 
 /*
  the EFLAGS register is the status register in the x86

@@ -62,7 +62,15 @@ void kmain(void)
     printf("ok\n");
     
 
-    _do_page_fault();
+    //_do_page_fault();
+
+    // XXX
+    {
+        volatile uint8_t *p = (uint8_t *) kmain;
+        *p = 113;
+    }
+
+    printf("it souldn't reach this point\n");
 
 
     //intr_enable();

@@ -23,7 +23,7 @@ static int _setup_identity(void)
     uint32_t addr;
 
     for (addr = 0; addr + PAGE_SIZE-1 <= PADDR_MAX; addr += PAGE_SIZE)
-        if (paging_map(addr, addr))
+        if (paging_map(addr, addr, true))
             return 1;
 
     return 0;
@@ -43,9 +43,7 @@ uint32_t _get_page_dir_paddr(void)
 static inline
 void _set_page_dir_paddr(uint32_t paddr)
 {
-    cr3_t cr3;
-
-    cr3 = cr3_get();
+    cr3_t cr3 = cr3_get();
     cr3.pdbr = paddr; 
 }
 #endif
@@ -53,9 +51,7 @@ void _set_page_dir_paddr(uint32_t paddr)
 static inline
 void _enable_paging(void)
 {
-    cr0_t cr0;
-
-    cr0 = cr0_get();
+    cr0_t cr0 = cr0_get();
     cr0.pg = 1;
     cr0_set(cr0);
 }
@@ -70,6 +66,28 @@ bool _page_is_mapped(uint32_t page_num)
 {
     // assume that the first page is never mapped at this point
     return paging_vaddr2paddr(page_num << 12);
+}
+
+static inline
+void _enable_write_protect(void)
+{
+    cr0_t cr0 = cr0_get();
+    cr0.wp = 1;
+    cr0_set(cr0);
+}
+
+static bool _is_page_writable(uint32_t page_num)
+{
+    uint32_t *page_table;
+    uint_fast16_t pt_idx;
+
+    // from the given vaddr we build another vaddr consisiting of:
+    // vaddr' = < 0xffc,  pd_idx, 0 >
+
+    page_table = (uint32_t *) (0x3ffU << 22 | (0x3ff & page_num >> 10) << 12);
+    pt_idx = (uint16_t) (0x3ff & page_num);
+
+    return page_table[pt_idx] & 0x2; 
 }
 
 // XXX
@@ -87,7 +105,7 @@ static int _keep_config(void)
 
     // XXX map VGA memory
     {
-        paging_map(0xb8000, 0xb8000);   
+        paging_map(0xb8000, 0xb8000, true);   
     }
 
     // do not copy the last entry in the page dir, since it doesn't
@@ -97,9 +115,14 @@ static int _keep_config(void)
                                         page_num <= (uint32_t) KERNEL_END >> 12;
                                         page_num++)
         if (_page_is_mapped(page_num)) {
-            printf("allocating page: %05x\n", page_num);
+            bool writable = _is_page_writable(page_num);
             uint32_t vaddr = page_num << 12;
-            if (paging_map(vaddr, paging_vaddr2paddr(vaddr)))
+
+            // XXX            
+            printf("allocating page: %05x : %s\n", page_num,
+                   writable ? "W" : "R");
+
+            if (paging_map(vaddr, paging_vaddr2paddr(vaddr), writable))
                 return 1;
         }
     return 0;
@@ -125,6 +148,9 @@ int paging_init(void)
 
         // now that the page dir and page tables are set up, load the page dir
         page_dir_load();
+
+        _enable_write_protect();
+
         return 0;
     }
 
@@ -154,6 +180,7 @@ void _reset_mmu_cache(void)
         );
 }
 
+
 int paging_unmap(uint32_t vaddr)
 {
     uint_fast16_t pd_idx;
@@ -178,7 +205,7 @@ int paging_unmap(uint32_t vaddr)
     return 0;
 }
 
-int paging_map(uint32_t vaddr, uint32_t paddr)
+int paging_map(uint32_t vaddr, uint32_t paddr, bool writable)
 {
     uint_fast16_t pd_idx;
     uint_fast16_t pt_idx;    
@@ -212,7 +239,8 @@ int paging_map(uint32_t vaddr, uint32_t paddr)
             return 1;
     }
 
-    if (page_tables_set_entry(pd_idx, pt_idx, paddr))
+    // TODO pass writable
+    if (page_tables_set_entry(pd_idx, pt_idx, paddr, writable))
         return 1;
 
     _reset_mmu_cache();

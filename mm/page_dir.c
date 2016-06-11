@@ -6,12 +6,9 @@
 
 typedef struct {
     unsigned int    present         :   1;
-    unsigned int    zero1           :   3;
-    /*
-        unsigned int    read_write      :   1;
-        unsigned int    user_supervisor :   1;
-        unsigned int    write_through   :   1;
-    */
+    unsigned int    write           :   1;
+    unsigned int    user            :   1;
+    unsigned int    write_through   :   1;
 
     unsigned int    cache_disabled  :   1;
     /*
@@ -56,7 +53,8 @@ int page_dir_set_entry(uint_fast16_t entry_num, uint32_t paddr)
     _[entry_num].paddr = paddr >> 12;
     _[entry_num].zero0 = 0;
     _[entry_num].cache_disabled = 1;
-    _[entry_num].zero1 = 0;
+    _[entry_num].user = 0;
+    _[entry_num].write = 1;
     _[entry_num].present = 1;
 
     return 0;

@@ -6,7 +6,7 @@
 #define PAGE_TABLE_LEN  1024
 typedef struct {
     unsigned int    present         :   1;
-    unsigned int    read_write      :   1;
+    unsigned int    write           :   1;
     unsigned int    user            :   1;
     unsigned int    write_through   :   1;
     unsigned int    cache_disabled  :   1;
@@ -24,6 +24,7 @@ typedef struct {
 typedef page_table_entry_t page_table_t[PAGE_TABLE_LEN]
         __attribute__((aligned));
 
+// TODO for the kernel only one page table is needed
 // each page table can map up to 4MB
 #define NUM_PAGE_TABLES 5
 // TODO move the aligned attribute to the page_table_t definition if possible
@@ -88,7 +89,7 @@ uint32_t page_tables_get_vaddr(uint_fast16_t table_idx)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
 int page_tables_set_entry(uint_fast16_t table_idx, uint_fast16_t entry_num, 
-                          uint32_t paddr)
+                          uint32_t paddr, bool writable)
 {
     uint_fast16_t array_idx;
     page_table_entry_t *pte;
@@ -106,6 +107,7 @@ int page_tables_set_entry(uint_fast16_t table_idx, uint_fast16_t entry_num,
     pte->zero = 0;
     pte->cache_disabled = 1;
     pte->user = 0;
+    pte->write = writable;
     pte->present = 1;
 
     return 0;

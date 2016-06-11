@@ -8,7 +8,7 @@
 
 int paging_init(void);
 bool paging_is_enabled(void);
-int paging_map(uint32_t vaddr, uint32_t paddr);
+int paging_map(uint32_t vaddr, uint32_t paddr, bool writable);
 int paging_unmap(uint32_t vaddr);
 
 uint32_t paging_vaddr2paddr(uint32_t vaddr);

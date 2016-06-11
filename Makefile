@@ -11,7 +11,7 @@ endef
 
 # $(call add-mod-build-target,module-name)
 define add-mod-build-target
-    $(eval $(call mod2build,$1):; $$(MAKE) -C $1/)
+    $(eval $(call mod2build,$1):; @$$(MAKE) -C $1/)
 endef
 
 # $(call connect-mod-build,module-name)
@@ -27,7 +27,7 @@ endef
 
 # $(call add-mod-clean-target,module-name)
 define add-mod-clean-target
-    $(eval $(call mod2clean,$1):; $$(MAKE) -C $1/ clean)
+    $(eval $(call mod2clean,$1):; @$$(MAKE) -C $1/ clean)
 endef
 
 # since both operators && and || have the same precedence and associativity is
@@ -72,7 +72,7 @@ linker-script := kernel.ld
 $(target): kmain.o startup.o $(linker-script) $(module-objects)
 	@echo -n linking $@...
 	@$(LINK.o) -o $@ $< $(module-objects) -Wl,-T $(linker-script)
-	@echo done
+	@$(echo-ok)
 
 # implicit rule for image creation
 dd      :=  dd
@@ -82,7 +82,7 @@ dd_of   =   $@
 	@echo -n generating image '$@'...
 	@$(dd) if=$(dd_if) of=$(dd_of) bs=$(dd_bs) count=$(dd_count) 2>/dev/null \
         $(check-status)
-	@echo done
+	@$(echo-ok)
 
 hdd.img: loop-dev := $(shell losetup --find)
 # each double-colon rule should specify a recipe, otherwise an implicit rule
@@ -97,7 +97,7 @@ hdd.img:: $(if $(wildcard hdd.img),,hdd-unformatted.img);
 	@sudo mkfs.fat -F 16 -n EMUK86 $(loop-dev) >/dev/null
 	@sudo losetup --detach $(loop-dev)
 	@$(MV) $< $@
-	@echo done
+	@$(echo-ok)
   endif
 
 hdd.img: loop-dev := $(shell losetup --find)
@@ -111,7 +111,7 @@ hdd.img:: $(target) | mount
 	@sudo umount $(dir)
 	@sudo losetup --detach $(loop-dev)
 	@touch $@
-	@echo done
+	@$(echo-ok)
 
 mount:
 	@mkdir $@
@@ -120,7 +120,7 @@ hdd-unformatted.img: hdd-unpartitioned.img
 	@echo -n partitioning '$<'...
 	@printf "n\np\n\n\n\nw" | fdisk $< >/dev/null $(check-status)
 	@$(MV) $< $@
-	@echo done
+	@$(echo-ok)
 
 # 32MiB
 hdd-unpartitioned.img:  dd_bs       :=  $(hdd-img-sector-size)

@@ -6,8 +6,10 @@ all: $(module-object)
 include ../common.mk
 includes := ../include/
 
+indentation := $(shell perl -e 'print "   " x ${MAKELEVEL}')
+
 $(module-object): $(objects)
-	@echo -n generating $@...
+	@echo -n "$(indentation)generating $@..."
 	@$(LINK.o) -Wl,--relocatable $(objects) -o $@
-	@echo done
+	@$(echo-ok)
 

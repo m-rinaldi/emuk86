@@ -1,5 +1,16 @@
 CC := ~/opt/cross/bin/i686-elf-gcc
 
+is-tty := $(shell stat --format %F -L /proc/$$PPID/fd/1 | \
+            grep 'character special file')
+
+ifdef is-tty
+    echo-ok := echo -e '\033[0;32mok\033[0m'
+    # TODO echo-fail
+else
+    echo-ok := echo ok
+    # TODO echo-fail
+endif
+
 MV := mv -f
 
 LDFLAGS     += -nostdlib 
@@ -32,19 +43,19 @@ sources := $(wildcard *.c *.S)
 objects := $(patsubst %.S,%.o,$(sources:%.c=%.o))
 
 %.o: %.c
-	@echo -n 'compiling $<...'
+	@echo -n '$(indentation)compiling  $<...'
 	@$(COMPILE.c) $(OUTPUT_OPTION) $<
-	@echo 'done'
+	@$(echo-ok)
 
 %.o: %.S
-	@echo -n 'assembling $<...'
+	@echo -n '$(indentation)assembling $<...'
 	@$(COMPILE.S) -o $@ $<
-	@echo 'done'
+	@$(echo-ok)
 
 .PHONY: clean
 clean:
-	@echo -n cleaning...
+	@echo -n '$(indentation)cleaning...'
 	@$(RM) *.o *.d *.log *.elf *.img
-	@echo done
+	@$(echo-ok)
 
 -include $(objects:%.o=%.d)

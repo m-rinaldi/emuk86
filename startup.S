@@ -1,5 +1,3 @@
-#include <config/startup.h>
-
 .text
 .globl _startup
 _startup:

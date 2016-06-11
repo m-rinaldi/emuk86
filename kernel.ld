@@ -10,6 +10,7 @@ SECTIONS
     }
 
     .text : ALIGN(0x1000) {
+        KERNEL_START        = .;
         KERNEL_TEXT_START   = .;
             *(.text)
         KERNEL_TEXT_END     = .;
@@ -25,6 +26,20 @@ SECTIONS
         KERNEL_BSS_START    = .;
             *(.bss)
         KERNEL_BSS_END      = .;
+
     }
+  
+    /* make sure a free page is left in between to detect illegal accesses */
+    . += 4K;
+    
+    /* the kernel stack */
+    .stack : ALIGN(0x1000) {
+        KERNEL_STACK_START  = .;
+        KERNEL_STACK_BOTTOM = .;
+            . += 4K;
+        KERNEL_STACK_END    = .;
+        KERNEL_STACK_TOP    = .;
+    }
+    KERNEL_END              = .;
 }
 

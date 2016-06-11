@@ -72,14 +72,32 @@ bool _page_is_mapped(uint32_t page_num)
     return paging_vaddr2paddr(page_num << 12);
 }
 
+// XXX
+#include <stdio.h>
+
 #define NUM_PAGES_MAX           (1 << 20)   // 1M pages
 static int _keep_config(void)
 {
+    extern uint32_t KERNEL_START[], KERNEL_END[], KERNEL_STACK_BOTTOM[],
+        KERNEL_STACK_TOP[], KERNEL_BSS_END[];
+    printf("\nKERNEL_START: %08x\n", KERNEL_START);
+    printf("KERNEL_BSS_END: %08x\n", KERNEL_BSS_END);
+    printf("KERNEL_STACK_BOTTOM: %08x\n", KERNEL_STACK_BOTTOM);
+    printf("KERNEL_STACK_TOP: %08x\n", KERNEL_STACK_TOP);
+
+    // XXX map VGA memory
+    {
+        paging_map(0xb8000, 0xb8000);   
+    }
+
     // do not copy the last entry in the page dir, since it doesn't
     // really have a page table backing it up
     // the "automap" page dir entry will be set up later 
-    for (size_t page_num = 1; page_num < NUM_PAGES_MAX - (1 << 10); page_num++)
+    for (size_t page_num = (size_t) KERNEL_START >> 12;
+                                        page_num <= (uint32_t) KERNEL_END >> 12;
+                                        page_num++)
         if (_page_is_mapped(page_num)) {
+            printf("allocating page: %05x\n", page_num);
             uint32_t vaddr = page_num << 12;
             if (paging_map(vaddr, paging_vaddr2paddr(vaddr)))
                 return 1;
@@ -101,6 +119,9 @@ int paging_init(void)
         // map the last page dir entry to itself
         if (page_dir_automap())
             return 1;
+
+        // XXX
+        printf("about to load PD\n");
 
         // now that the page dir and page tables are set up, load the page dir
         page_dir_load();

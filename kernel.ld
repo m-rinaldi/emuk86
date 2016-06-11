@@ -4,6 +4,11 @@ STARTUP(startup.o)
 
 SECTIONS 
 {
+    /DISCARD/ : {
+        *(.eh_frame)
+        *(.comment)
+    }
+
     /*          VMA                 LMA           */
     .text.start (0xc0000000)    :   AT(0x00100000) {
         startup.o(.text)

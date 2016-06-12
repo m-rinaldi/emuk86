@@ -25,8 +25,9 @@ typedef page_table_entry_t page_table_t[PAGE_TABLE_LEN]
         __attribute__((aligned));
 
 // TODO for the kernel only one page table is needed
-// each page table can map up to 4MB
-#define NUM_PAGE_TABLES 5
+// TODO remove the first table after mapping the VGA mem into the higher half
+// each page table can map up to 4 MiB
+#define NUM_PAGE_TABLES 2
 // TODO move the aligned attribute to the page_table_t definition if possible
 static page_table_t _[NUM_PAGE_TABLES];
 

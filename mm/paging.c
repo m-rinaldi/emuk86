@@ -103,7 +103,7 @@ static int _keep_config(void)
     printf("KERNEL_STACK_BOTTOM: %08x\n", KERNEL_STACK_BOTTOM);
     printf("KERNEL_STACK_TOP: %08x\n", KERNEL_STACK_TOP);
 
-    // XXX map VGA memory
+    // TODO map VGA memory to the higher half
     {
         paging_map(0xb8000, 0xb8000, true);   
     }

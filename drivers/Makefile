@@ -8,7 +8,7 @@ includes := ../include/
 
 indentation := $(shell perl -e 'print "   " x ${MAKELEVEL}')
 
-$(module-object): $(objects)
+$(module-object): $(objects) $(firstword $(MAKEFILE_LIST))
 	@echo -n "$(indentation)generating $@..."
 	@$(LINK.o) -Wl,--relocatable $(objects) -o $@
 	@$(echo-ok)

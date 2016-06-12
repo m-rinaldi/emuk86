@@ -69,6 +69,7 @@ $(foreach mod,$(modules),$(call add-mod-clean-target,$(mod)))
 
 linker-script := kernel.ld
 # TODO add (header) dependencies automatically
+$(target): $(firstword $(MAKEFILE_LIST))
 $(target): kmain.o startup.o $(linker-script) $(module-objects)
 	@echo -n linking $@...
 	@$(LINK.o) -o $@ $< $(module-objects) -Wl,-T $(linker-script)

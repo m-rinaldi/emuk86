@@ -41,14 +41,14 @@ ifdef HOSTED
 endif
 
 sources := $(wildcard *.c *.S)
-objects := $(patsubst %.S,%.o,$(sources:%.c=%.o))
+objects := $(patsubst %.S,%_asm.o,$(sources:%.c=%.o))
 
 %.o: %.c $(makefile)
 	@echo -n '$(indentation)compiling  $<...'
 	@$(COMPILE.c) $(OUTPUT_OPTION) $<
 	@$(echo-ok)
 
-%.o: %.S $(makefile)
+%_asm.o: %.S $(makefile)
 	@echo -n '$(indentation)assembling $<...'
 	@$(COMPILE.S) -o $@ $<
 	@$(echo-ok)

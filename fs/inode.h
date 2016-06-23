@@ -1,10 +1,13 @@
 #pragma once
 
 #include <ext2.h>
+#include <list.h>
 
 #include <stdbool.h>
 
 typedef struct st_inode {
+    list_node_t     free_node;
+
     bool            valid;
     ino_num_t       num;
 

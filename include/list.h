@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include <string.h>
 
+// TODO make possible to place the list_node structure wherever by
+//      using the offsetof() macro in stddef.h
 #define list_get_entry(node, type) ((type *) node)
 
 typedef struct list_node {
@@ -91,11 +93,17 @@ bool list_is_node_tail(const list_t *lst, const list_node_t *node)
     return lst->head.prev == node;
 }
 
-// for iterating over the list
 static inline
-bool list_is_surpassed(const list_t *lst, const list_node_t *node)
+bool list_is_dummy_node(const list_t *lst, const list_node_t *node)
 {
     return &lst->head == node;
+}
+
+// for iterating over the list
+static inline
+bool list_is_iteration_over(const list_t *lst, const list_node_t *node)
+{
+    return list_is_dummy_node(lst, node);
 }
 
 // insert node at the end of the list

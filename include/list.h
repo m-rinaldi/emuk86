@@ -2,15 +2,25 @@
 
 #include <stdbool.h>
 #include <string.h>
+#include <stdint.h>
+#include <stddef.h>
 
-// TODO make possible to place the list_node structure wherever by
-//      using the offsetof() macro in stddef.h
-#define list_get_entry(node, type) ((type *) node)
+
+#define node_get_container(node, type, member)  \
+                                ((type *)       \
+                                (_node2uint8_t(node) - offsetof(type, member)))
 
 typedef struct list_node {
     struct list_node *prev;
     struct list_node *next;
 } list_node_t;
+
+// type checking for the first parameter of node_get_container() macro
+static inline
+uint8_t *_node2uint8_t(const list_node_t *node)
+{
+    return (uint8_t *) node;
+}
 
 /*******************************************************************************
  operations on nodes

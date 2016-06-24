@@ -62,11 +62,11 @@ static inode_t *_get_free_inode()
 {
     list_node_t *node;
 
-    if ((node = list_get_head_node(&_free_list)))
-        node_remove(node);
+    if (!(node = list_get_head_node(&_free_list)))
+        return NULL;
 
-    // TODO use a macro with offsetof()
-    return list_get_entry(node, inode_t);
+    node_remove(node);
+    return node_get_container(node, inode_t, free_node);
 }
 
 static void _release_inode(inode_t *ino)

@@ -6,6 +6,10 @@
 #include <blkpool.h>
 #include <bgdpool.h>
 #include <inode.h>
+#include <ipool.h>
+
+// XXX
+#include <stdio.h>
 
 #define ROOT_INODE  2
 
@@ -42,6 +46,93 @@ static inline
 unsigned _ino2lidx(ino_num_t ino_num)
 {
     return (ino_num - 1) % (_.super->inodes_per_group);
+}
+
+/*******************************************************************************
+ for transforming a filepath into an inode
+*******************************************************************************/
+typedef struct {
+    const char *start, *end;
+} component_t;
+
+static inline
+bool _is_eoi(char c)
+{
+    return '\0' == c;
+}
+
+static inline
+bool _is_separator(char c)
+{
+    return '/' == c;
+}
+
+static bool _component_is_valid(const component_t *c)
+{
+    // the first character cannot be the component separator
+    if (_is_separator(*c->start))
+        return false;
+
+    // a single-char component must not be the separator
+    if (c->start == c->end)
+        return false;
+
+    return true;
+}
+
+static void _component_display(const component_t *c)
+{
+    char str[256];
+    unsigned len = c->end - c->start + 1;
+
+    strncpy(str, c->start, len);
+    str[len] = '\0';
+    printf("<%s> valid: %s\n", str, _component_is_valid(c) ? "yes" : "no");
+}
+
+static const char *_component_set(component_t *c, const char * const filepath)
+{
+    if (!*filepath)
+        return filepath;
+
+    for (c->start = c->end = filepath; !_is_eoi(c->end[1]); c->end++)
+        if (_is_separator(c->end[1])) {
+            if (_is_eoi(c->end[2])) {
+                c->end++;   // perserve the '/' at the end of the pathname
+                return c->end + 1;
+            }
+            return c->end + 2;
+        }
+    // end of string found
+    return c->end + 1;
+}
+
+inode_t *ext2_namei(const char *filepath)
+{
+    inode_t *wino;  // working inode
+
+    if (!*filepath)
+        return NULL; // empty filepath
+
+    if (_is_separator(*filepath)) {
+        filepath++;
+        wino = ipool_geti(ROOT_INODE_NUM);
+    } else
+        wino = ipool_geti(ROOT_INODE_NUM); // TODO inode of task's CWD instead
+
+    component_t c;
+
+    while (*filepath) {
+        filepath = _component_set(&c, filepath);
+        //_component_display(&c);
+
+        if (!_component_is_valid(&c))
+            return NULL;
+
+        // TODO
+    }
+
+    return NULL;
 }
 
 /*******************************************************************************

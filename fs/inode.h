@@ -5,6 +5,8 @@
 
 #include <stdbool.h>
 
+#define ROOT_INODE_NUM  2
+
 typedef struct st_inode {
     list_node_t     free_node;
 

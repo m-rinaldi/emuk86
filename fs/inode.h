@@ -15,6 +15,7 @@ typedef struct st_inode {
 
     unsigned        count;
     bool            locked;
+    bool            dirty;
 
     ext2_inode_t    dinode;
 } inode_t;

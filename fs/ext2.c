@@ -184,6 +184,17 @@ err:
 }
 
 /*******************************************************************************
+ * low-level function for reading an inode from disk
+ ******************************************************************************/
+int ext2_writei(ino_num_t ino_num, const ext2_inode_t *ino)
+{
+    // TODO
+    (void) ino_num;
+    (void) ino;
+    return 0;
+}
+
+/*******************************************************************************
  * low-level function for reading a block group descriptor from disk
  ******************************************************************************/
 int ext2_read_bgd(uint32_t grp_num, ext2_bgd_t *bgd)

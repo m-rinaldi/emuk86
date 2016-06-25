@@ -69,12 +69,29 @@ static inode_t *_get_free_inode()
     return node_get_container(node, inode_t, free_node);
 }
 
-static void _release_inode(inode_t *ino)
+static int _release_inode(inode_t *ino)
 {
-    inode_unlock(ino);
+    if (!--ino->count) {
+        if (ino->valid && ino->dirty) {
+            // write inode back to disk
+            inode_lock(ino);
 
-    if (!--ino->count)
+            if (ext2_writei(ino->num, &ino->dinode)) {
+                inode_unlock(ino);
+                ino->valid = false;
+                // TODO put at the head of the list instead
+                list_insert(&_free_list, &ino->free_node);
+                return 1;
+            }
+
+            ino->dirty = false;
+        }
+
         list_insert(&_free_list, &ino->free_node);
+    }
+
+    inode_unlock(ino);
+    return 0;
 }
 
 static inline
@@ -99,9 +116,7 @@ inode_t *ipool_geti(ino_num_t ino_num)
         if (_is_inode_on_free_list(ino))
             node_remove(&ino->free_node);
 
-        inode_lock(ino);
         ino->count++;
-
         return ino;
     }
     
@@ -130,7 +145,7 @@ err:
 }
 
 
-void ipool_puti(inode_t *ino)
+int ipool_puti(inode_t *ino)
 {
-    _release_inode(ino);
+    return _release_inode(ino);
 }

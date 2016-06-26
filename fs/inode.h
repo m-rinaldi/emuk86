@@ -37,3 +37,9 @@ bool inode_is_locked(const inode_t *ino)
 {
     return ino->locked;
 }
+
+static inline
+bool inode_is_dir(const inode_t *ino)
+{
+    return ino->dinode.mode & EXT2_S_IFDIR;
+}

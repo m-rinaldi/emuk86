@@ -166,6 +166,46 @@ static void _display_dir_entry(const dir_entry_t *de)
     fprintf(stderr, "filename: <%s>\n", filename);
 }
 
+// TODO explanation comment
+static inode_t *_get_dir_entry_inode(inode_t *dir_ino, component_t *c)
+{
+    dir_entry_t de;
+    bool must_check_is_dir = false;
+
+    // check whether the component has a trailing '/'
+    if (_is_separator(*c->end)) {
+        c->end--;
+        must_check_is_dir = true;
+    }
+
+    for (uint32_t byte_off = 0;
+         byte_off < dir_ino->dinode.size;
+         byte_off += de.ddir_entry->_.rec_len)
+    {
+        if (_get_dir_entry(dir_ino, &de, byte_off))
+            return NULL;
+
+        // XXX
+        _display_dir_entry(&de);
+
+        // TODO compare component with inode
+        if (_component_len(c) == de.ddir_entry->_.name_len)
+            if (_component_is_str(c, de.ddir_entry->st_name.name)) {
+                _put_dir_entry(&de);
+
+                if (must_check_is_dir && !inode_is_dir(dir_ino))
+                    return NULL;
+
+                return dir_ino;
+            }
+
+        _put_dir_entry(&de);
+    }
+
+    // entry not found in directory
+    return NULL;
+}
+
 inode_t *ext2_namei(const char *filepath)
 {
     inode_t *wino;  // working inode
@@ -183,7 +223,6 @@ inode_t *ext2_namei(const char *filepath)
         return NULL;
 
     component_t c;
-    uint32_t byte_off = 0;
 
     while (*filepath) {
         filepath = _component_set(&c, filepath);
@@ -204,22 +243,8 @@ inode_t *ext2_namei(const char *filepath)
         if (ROOT_INODE_NUM == wino->num && _component_is_str(&c, ".."))
             continue;
 
-        // TODO implement function _get_dir_entry_name(component_t *c) instead
-        uint32_t byte_off;
-        while (byte_off < wino->dinode.size) {
-            dir_entry_t de;
-
-            if (_get_dir_entry(wino, &de, byte_off))
-                return NULL;
-
-            // byte offset for the next directory entry
-            byte_off += de.ddir_entry->_.rec_len;
-
-            // XXX
-            _display_dir_entry(&de);
-
-            _put_dir_entry(&de);
-        }
+        if (!_get_dir_entry_inode(wino, &c))
+            return NULL;
 
         // TODO
     }

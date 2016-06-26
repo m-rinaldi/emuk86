@@ -48,7 +48,7 @@
 #define EXT2_RESERVED_FL    0x80000000  // reserved for ext2 library
 
 
-#define EXT2_NUM_DIR_BLKS   12  // number of direct blocks pointers
+#define EXT2_NUM_DIR_BLKS   12U // number of direct blocks pointers
 #define EXT2_SIND_BLK_IDX   EXT2_NUM_DIR_BLKS     // (single) indirect block idx
 #define EXT2_DIND_BLK_IDX   (EXT2_SIND_BLK_IDX+1) // doubly-indirect block idx
 #define EXT2_TIND_BLK_IDX   (EXT2_DIND_BLK_IDX+1) // triply-indirect block idx 

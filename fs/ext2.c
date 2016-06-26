@@ -2,12 +2,14 @@
 
 #include <ext2_super.h>
 #include <ext2_inode.h>
+#include <ext2_dir.h>
 #include <ext2_bgdt.h>
 #include <blkpool.h>
 #include <bgdpool.h>
 #include <inode.h>
 #include <ipool.h>
 
+#include <string.h>
 // XXX
 #include <stdio.h>
 
@@ -49,7 +51,7 @@ unsigned _ino2lidx(ino_num_t ino_num)
 }
 
 /*******************************************************************************
- for transforming a filepath into an inode
+ functions for transforming a filepath into an inode
 *******************************************************************************/
 typedef struct {
     const char *start, *end;
@@ -67,6 +69,17 @@ bool _is_separator(char c)
     return '/' == c;
 }
 
+static inline
+size_t _component_len(const component_t *c)
+{
+    return c->end - c->start + 1;
+}
+
+static bool _component_is_str(const component_t *c, const char *str)
+{
+    return !strncmp(c->start, str, _component_len(c));
+}
+
 static bool _component_is_valid(const component_t *c)
 {
     // the first character cannot be the component separator
@@ -74,7 +87,7 @@ static bool _component_is_valid(const component_t *c)
         return false;
 
     // a single-char component must not be the separator
-    if (c->start == c->end)
+    if (_component_is_str(c, "/"))
         return false;
 
     return true;
@@ -106,6 +119,52 @@ static const char *_component_set(component_t *c, const char * const filepath)
     // end of string found
     return c->end + 1;
 }
+// TODO _component_is_dir() check whether the component ends at "/"
+
+typedef struct {
+    union u_ddir_entry {
+        ext2_dir_entry_t    _;
+        struct {
+            uint8_t padding[8];
+            char    name[256];
+        } st_name;
+    } *ddir_entry;
+
+    // buffer block containing the directory entry
+    bufblk_t            *bufblk;
+} dir_entry_t;
+
+static
+int _get_dir_entry(const inode_t *ino, dir_entry_t *de, uint32_t byte_off)
+{
+    blk_num_t blk_num;
+    uint32_t byte_loff;
+
+    blk_num = ext2_bmap(ino, byte_off, &byte_loff);
+
+    if (!(de->bufblk = blkpool_getblk(blk_num)))
+        return 1;
+
+    de->ddir_entry = (union u_ddir_entry *)
+                            ((uint8_t *) &de->bufblk->block + byte_loff);
+
+    return 0;
+}
+
+static void _put_dir_entry(const dir_entry_t *de)
+{
+    blkpool_putblk(de->bufblk);
+}
+
+static void _display_dir_entry(const dir_entry_t *de)
+{
+    char filename[256];
+    size_t len = de->ddir_entry->_.name_len;
+
+    strncpy(filename, de->ddir_entry->st_name.name, len);
+    filename[len] = '\0';
+    fprintf(stderr, "filename: <%s>\n", filename);
+}
 
 inode_t *ext2_namei(const char *filepath)
 {
@@ -116,23 +175,56 @@ inode_t *ext2_namei(const char *filepath)
 
     if (_is_separator(*filepath)) {
         filepath++;
-        wino = ipool_geti(ROOT_INODE_NUM);
+        wino = ipool_geti(ROOT_INODE_NUM); // TODO task's root dir instead
     } else
         wino = ipool_geti(ROOT_INODE_NUM); // TODO inode of task's CWD instead
 
+    if (!wino)
+        return NULL;
+
     component_t c;
+    uint32_t byte_off = 0;
 
     while (*filepath) {
         filepath = _component_set(&c, filepath);
-        //_component_display(&c);
+
+        if (!inode_is_dir(wino))
+            return NULL;
+
+        // TODO check permissions
+
+        // XXX
+        _component_display(&c);
 
         if (!_component_is_valid(&c))
             return NULL;
 
+        // needed in case chroot()ed
+        // TODO task's root dir instead of ROOT_INODE_NUM
+        if (ROOT_INODE_NUM == wino->num && _component_is_str(&c, ".."))
+            continue;
+
+        // TODO implement function _get_dir_entry_name(component_t *c) instead
+        uint32_t byte_off;
+        while (byte_off < wino->dinode.size) {
+            dir_entry_t de;
+
+            if (_get_dir_entry(wino, &de, byte_off))
+                return NULL;
+
+            // byte offset for the next directory entry
+            byte_off += de.ddir_entry->_.rec_len;
+
+            // XXX
+            _display_dir_entry(&de);
+
+            _put_dir_entry(&de);
+        }
+
         // TODO
     }
 
-    return NULL;
+    return wino;
 }
 
 /*******************************************************************************
@@ -223,8 +315,43 @@ int ext2_read_bgd(uint32_t grp_num, ext2_bgd_t *bgd)
     return 0;
 }
 
-blk_num_t ext2_bmap(inode_t *ino, uint32_t boff, uint32_t *blk_loff)
+/*******************************************************************************
+ * low-level functions for determining the block number from a byte offset
+ ******************************************************************************/
+// determines the required level of indirection from the logical block number
+static inline
+unsigned _blk2indlevel(blk_num_t lblk_num)
 {
-    // TODO add ouput byte offset into block
+    switch (lblk_num) {
+        case EXT2_SIND_BLK_IDX:
+            return 1;
+
+        case EXT2_DIND_BLK_IDX:
+            return 2;
+
+        case EXT2_TIND_BLK_IDX:
+            return 3;
+    }
     return 0;
 }
+
+blk_num_t ext2_bmap(const inode_t *ino, uint32_t byte_off, uint32_t *blk_loff)
+{
+    blk_num_t lblk_num;
+
+    // calculate logical block number
+    lblk_num  = byte_off / BLOCK_SIZE;
+
+    // calculate local (to the block) byte offset
+    *blk_loff = byte_off % BLOCK_SIZE;
+
+    unsigned ind_level = _blk2indlevel(lblk_num);
+
+    while (ind_level) {
+        // TODO blocks requiring a level of indirection other than zero
+    }
+
+    return ino->dinode.block[lblk_num];
+}
+
+

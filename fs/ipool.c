@@ -15,7 +15,27 @@ static inode_t _[POOL_SIZE];
 
 static list_t _free_list;
 
-typedef bool (*imatch_func_t)(const inode_t *, ...);
+// TODO define a macro DEFINE_ITERATE(array, len, type)
+//                     DEFINE_ITERATE(_, POOL_SIZE, inode_t)
+typedef void (* iterate_func_t)(inode_t *);
+static void _iterate(iterate_func_t func_do)
+{
+    for (int i = 0; i < POOL_SIZE; i++)
+        func_do(_ + i);
+}
+
+// TODO define a macro DEFINE_ITERATE_SEL(array, len, type)
+//                     DEFINE_ITERATE_SEL(_, POOL_SIZE, inode_t)
+// iterates over the pool for selecting an element
+typedef bool (*iterate_sel_func_t)(const inode_t *, ino_num_t);
+static inode_t *_iterate_sel(iterate_sel_func_t does_match, ino_num_t ino_num)
+{
+    for (int i = 0; i < POOL_SIZE; i++)
+        if (does_match(_ + i, ino_num))
+            return _ + i;
+
+    return NULL;
+}
 
 static inline
 void _init(inode_t *ino)
@@ -31,29 +51,12 @@ void ipool_init()
 {
     list_init(&_free_list);
 
-    for (int i = 0; i < POOL_SIZE; i++)
-        _init(_ + i);
+    _iterate(_init);
 }
 
-// iterates over the pool
-static inode_t *_iterate(imatch_func_t does_match, ino_num_t ino_num)
+
+static bool _is_ino_num(const inode_t *ino, ino_num_t ino_num)
 {
-    for (int i = 0; i < POOL_SIZE; i++)
-        if (does_match(_ + i, ino_num))
-            return _ + i;
-
-    return NULL;
-}
-
-static bool _is_ino_num(const inode_t *ino, ...)
-{
-    va_list ap;
-    ino_num_t ino_num;
-    
-    va_start(ap, ino);
-    ino_num = va_arg(ap, ino_num_t);
-    va_end(ap);
-
     return ino_num == ino->num;
 }
 
@@ -106,11 +109,13 @@ inode_t *ipool_geti(ino_num_t ino_num)
     inode_t *ino;
 
 //beginning:
-    if ((ino =_iterate(_is_ino_num, ino_num))) {
+    if ((ino =_iterate_sel(_is_ino_num, ino_num))) {
         if (inode_is_locked(ino)) {
             // TODO sleep on event "this inode becomes free"
+            // XXX
+            while (1)
+                ;
             // TODO goto beginning;
-            return NULL;
         }
 
         if (_is_inode_on_free_list(ino))

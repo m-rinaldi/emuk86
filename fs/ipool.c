@@ -3,6 +3,7 @@
 #include <ext2.h>
 #include <list.h>
 #include <inode.h>
+#include <iterator.h>
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -15,27 +16,11 @@ static inode_t _[POOL_SIZE];
 
 static list_t _free_list;
 
-// TODO define a macro DEFINE_ITERATE(array, len, type)
-//                     DEFINE_ITERATE(_, POOL_SIZE, inode_t)
 typedef void (* iterate_func_t)(inode_t *);
-static void _iterate(iterate_func_t func_do)
-{
-    for (int i = 0; i < POOL_SIZE; i++)
-        func_do(_ + i);
-}
-
-// TODO define a macro DEFINE_ITERATE_SEL(array, len, type)
-//                     DEFINE_ITERATE_SEL(_, POOL_SIZE, inode_t)
-// iterates over the pool for selecting an element
 typedef bool (*iterate_sel_func_t)(const inode_t *, ino_num_t);
-static inode_t *_iterate_sel(iterate_sel_func_t does_match, ino_num_t ino_num)
-{
-    for (int i = 0; i < POOL_SIZE; i++)
-        if (does_match(_ + i, ino_num))
-            return _ + i;
 
-    return NULL;
-}
+DEFINE_ITERATE(_, POOL_SIZE, inode_t, iterate_func_t)
+DEFINE_ITERATE_SEL(_, POOL_SIZE, inode_t, iterate_sel_func_t, ino_num_t)
 
 static inline
 void _init(inode_t *ino)

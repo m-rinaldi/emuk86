@@ -1,11 +1,11 @@
 #include <ext2.h>
 
-#include <ext2_super.h>
 #include <ext2_inode.h>
 #include <ext2_dir.h>
 #include <ext2_bgdt.h>
 #include <blkpool.h>
 #include <bgdpool.h>
+#include <super.h>
 #include <inode.h>
 #include <ipool.h>
 
@@ -18,17 +18,34 @@
 static const char *_strerr = "unknown";
 
 static struct {
-    const ext2_super_t *super;
+    // information obtained from the superblock that is not expected to
+    // change within a file system mount session
+    uint32_t    inodes_per_group;
+    // TODO complete
 } _;
+
+static void _copy_super_const_info(const super_t *super)
+{
+    // copy information of the superblock which is not expected to change
+    // within a file system "mount session"
+    //      1) inodes per group
+
+    _.inodes_per_group = super->_->inodes_per_group;
+    // TODO complete
+}
 
 int ext2_init()
 {
-    if (ext2_super_init()) {
+    super_t *super;
+
+    if (!(super = super_get())) {
         _strerr = ext2_strerr();
         return 1;
     }
 
-    _.super = ext2_super_get();
+    _copy_super_const_info(super);
+
+    super_put(super);
 
     return 0;
 }
@@ -41,13 +58,13 @@ const char *ext2_strerr()
 static inline
 unsigned _ino2grp(ino_num_t ino_num)
 {
-    return (ino_num - 1) / (_.super->inodes_per_group);
+    return (ino_num - 1) / (_.inodes_per_group);
 }
 
 static inline
 unsigned _ino2lidx(ino_num_t ino_num)
 {
-    return (ino_num - 1) % (_.super->inodes_per_group);
+    return (ino_num - 1) % (_.inodes_per_group);
 }
 
 /*******************************************************************************
@@ -357,12 +374,13 @@ unsigned _blk2indlevel(blk_num_t lblk_num)
         case EXT2_TIND_BLK_IDX:
             return 3;
     }
-    return 0;
+
+    return 0; // no indirection
 }
 
 blk_num_t ext2_bmap(const inode_t *ino, uint32_t byte_off, uint32_t *blk_loff)
 {
-    blk_num_t lblk_num;
+    blk_num_t lblk_num, blk_num;
 
     // calculate logical block number
     lblk_num  = byte_off / BLOCK_SIZE;
@@ -372,11 +390,13 @@ blk_num_t ext2_bmap(const inode_t *ino, uint32_t byte_off, uint32_t *blk_loff)
 
     unsigned ind_level = _blk2indlevel(lblk_num);
 
+    // block to take at first
+    // TODO blk_num = ino->dinode.block[lblk_num + ind_level];
+
     while (ind_level) {
         // TODO blocks requiring a level of indirection other than zero
     }
 
+    // TODO return blk_num;
     return ino->dinode.block[lblk_num];
 }
-
-

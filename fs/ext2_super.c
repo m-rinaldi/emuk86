@@ -15,6 +15,7 @@
     buffer cache
  */
 
+static bool _initialized;
 static ext2_super_t _;
 static unsigned _num_groups;
 static const char *_strerr = "unknown";
@@ -32,7 +33,7 @@ static int _load()
 
     memcpy(&_, &bufblk->block, sizeof(_)); 
 
-    // TODO keep the buffer block corresponding to the superblock locked?
+    // do not keep the buffer block corresponding to the superblock locked
     blkpool_putblk(bufblk);
     
     return 0;
@@ -97,6 +98,9 @@ bool _has_incompatible_features()
 static bool _is_supported()
 {
 /*
+    it seems that the revision field is changed to rev 1 whenever a rev 0 ext2
+    file system is mounted in Linux
+
     if (!_is_revision_zero()) 
         return false;
 */
@@ -152,7 +156,7 @@ static int _calc_num_groups(unsigned *num_groups)
     return 0;    
 }
 
-int ext2_super_init()
+static int _init()
 {
     if (_load())
         return 1;
@@ -174,9 +178,31 @@ const char *ext2_super_strerr()
     return _strerr;
 }
 
-const ext2_super_t *ext2_super_get()
+/*******************************************************************************
+ * low-level function for reading the superblock
+ ******************************************************************************/
+ext2_super_t *ext2_read_super()
 {
+    if (!_initialized) {
+        if (_init())
+            return NULL;
+
+        _initialized = true;
+    }
+
     return &_;
+}
+
+/*******************************************************************************
+ * low-level function for writing the superblock
+ ******************************************************************************/
+int ext2_write_super(ext2_super_t *super)
+{
+    (void) super;
+
+    // TODO
+
+    return 1;
 }
 
 void ext2_super_display()

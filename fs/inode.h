@@ -1,11 +1,15 @@
 #pragma once
 
-#include <ext2.h>
+#include <ext2_common.h>
+#include <ext2_inode.h>
 #include <list.h>
 
+#include <stdint.h>
 #include <stdbool.h>
 
 #define ROOT_INODE_NUM  2
+
+typedef uint32_t ino_num_t;
 
 typedef struct st_inode {
     list_node_t     free_node;

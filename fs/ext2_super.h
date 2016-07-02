@@ -107,8 +107,6 @@ typedef struct {
         
 } __attribute__((packed)) ext2_super_t;
 
-
-int ext2_super_init();
+ext2_super_t *ext2_read_super();
 const char *ext2_super_strerr();
 void ext2_super_display();
-const ext2_super_t *ext2_super_get();

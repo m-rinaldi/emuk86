@@ -14,4 +14,4 @@ inode_t *ext2_namei(const char *filepath);
 int ext2_readi(ino_num_t, ext2_inode_t *);
 int ext2_writei(ino_num_t, const ext2_inode_t *);
 int ext2_read_bgd(uint32_t, ext2_bgd_t *);
-blk_num_t ext2_bmap(const inode_t *, uint32_t, uint32_t *);
+int ext2_bmap(const inode_t *, uint32_t, blk_num_t *blk_num, uint32_t *blk_off);

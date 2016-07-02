@@ -157,7 +157,8 @@ int _get_dir_entry(const inode_t *ino, dir_entry_t *de, uint32_t byte_off)
     blk_num_t blk_num;
     uint32_t byte_loff;
 
-    blk_num = ext2_bmap(ino, byte_off, &byte_loff);
+    if (ext2_bmap(ino, byte_off, &blk_num, &byte_loff))
+        return 1;
 
     if (!(de->bufblk = blkpool_getblk(blk_num)))
         return 1;
@@ -378,9 +379,12 @@ unsigned _blk2indlevel(blk_num_t lblk_num)
     return 0; // no indirection
 }
 
-blk_num_t ext2_bmap(const inode_t *ino, uint32_t byte_off, uint32_t *blk_loff)
+#define BLKADDRS_PER_BLOCK  (sizeof(block_t)/sizeof(blk_num_t))
+
+int ext2_bmap(const inode_t *ino, uint32_t byte_off,
+                blk_num_t *blk_num, uint32_t *blk_loff)
 {
-    blk_num_t lblk_num, blk_num;
+    blk_num_t lblk_num;
 
     // calculate logical block number
     lblk_num  = byte_off / BLOCK_SIZE;
@@ -391,12 +395,28 @@ blk_num_t ext2_bmap(const inode_t *ino, uint32_t byte_off, uint32_t *blk_loff)
     unsigned ind_level = _blk2indlevel(lblk_num);
 
     // block to take at first
-    // TODO blk_num = ino->dinode.block[lblk_num + ind_level];
+    *blk_num = ino->dinode.block[lblk_num + ind_level];
 
-    while (ind_level) {
-        // TODO blocks requiring a level of indirection other than zero
+    // blocks requiring a level of indirection other than zero
+    for (lblk_num -= EXT2_NUM_DIR_BLKS;
+         ind_level; // requires indirection?
+         lblk_num /= BLKADDRS_PER_BLOCK, ind_level--)
+    {
+        unsigned blkaddr_off = lblk_num & (BLKADDRS_PER_BLOCK - 1);
+
+        // pick up a block containing block addresses/numbers
+        {
+            bufblk_t *bufblk;
+
+            if (!(bufblk = blkpool_getblk(*blk_num)))
+                return 1;
+
+            // get block number of the next indirection level (if any)
+            *blk_num = blkaddr_off[(blk_num_t *) &bufblk->block];
+
+            blkpool_putblk(bufblk);
+        }
     }
 
-    // TODO return blk_num;
-    return ino->dinode.block[lblk_num];
+    return 0;
 }

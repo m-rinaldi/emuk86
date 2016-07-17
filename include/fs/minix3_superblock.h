@@ -17,5 +17,11 @@ typedef struct {
     uint16_t    s_magic;            // minix fs v3 magic number
     uint16_t    s_pad2;
     uint16_t    s_blocksize;        // block size in bytes
+
+    // filesystem format sub-version (revision), zero by default
     uint8_t     s_disk_version;
 } __attribute__((packed)) minix3_superblock_t;
+
+
+minix3_superblock_t *minix3_superblock_read();
+void minix3_superblock_display();

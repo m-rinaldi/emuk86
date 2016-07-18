@@ -50,3 +50,5 @@ typedef struct {
     uint32_t    i_ctime;    // time of last inode change
     uint32_t    i_zone[10]; // zone numbers
 } __attribute__((packed)) minix3_inode_t;
+
+void minix3_inode_display(const minix3_inode_t *);

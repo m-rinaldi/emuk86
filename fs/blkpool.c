@@ -53,8 +53,10 @@ bufblk_t *blkpool_getblk(blk_num_t blk_num)
 
     bufblk_t *bufblk;
 
-    if (!(bufblk = _get_free()))
+    if (!(bufblk = _get_free())) {
+        // TODO error msg: no free buffer blocks available
         return NULL;
+    }
 
     if (_readblk(blk_num, &bufblk->block)) {
         blkpool_putblk(bufblk);

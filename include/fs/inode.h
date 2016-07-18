@@ -1,19 +1,13 @@
 #pragma once
 
-#include <ext2_common.h>
-#include <ext2_inode.h>
 #include <list.h>
+#include <fs.h>
+#include <minix3_inode.h>
 
 #include <stdint.h>
 #include <stdbool.h>
 
-#define ROOT_INODE_NUM  2
-
-typedef uint32_t ino_num_t;
-
 typedef struct st_inode {
-    list_node_t     free_node;
-
     bool            valid;
     ino_num_t       num;
 
@@ -21,7 +15,9 @@ typedef struct st_inode {
     bool            locked;
     bool            dirty;
 
-    ext2_inode_t    dinode;
+    minix3_inode_t  dinode;     // actual data
+
+    list_node_t     free_node;
 } inode_t;
 
 static inline
@@ -45,5 +41,6 @@ bool inode_is_locked(const inode_t *ino)
 static inline
 bool inode_is_dir(const inode_t *ino)
 {
-    return ino->dinode.mode & EXT2_S_IFDIR;
+    // TODO this function is not independent from file system
+    return ino->dinode.i_mode & MINIX3_S_IFDIR;
 }

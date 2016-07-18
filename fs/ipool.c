@@ -1,14 +1,13 @@
 #include <ipool.h>
 
-#include <ext2.h>
 #include <list.h>
 #include <inode.h>
 #include <iterator.h>
+#include <minix3.h>
 
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdarg.h>
-
 #include <string.h>
 
 #define POOL_SIZE   8
@@ -64,7 +63,7 @@ static int _release_inode(inode_t *ino)
             // write inode back to disk
             inode_lock(ino);
 
-            if (ext2_writei(ino->num, &ino->dinode)) {
+            if (minix3_writei(ino->num, &ino->dinode)) {
                 inode_unlock(ino);
                 ino->valid = false;
                 // TODO put at the head of the list instead
@@ -122,7 +121,7 @@ inode_t *ipool_geti(ino_num_t ino_num)
     ino->valid = false;
 
     // perform a read of the contents of the inode on disk
-    if (ext2_readi(ino_num, &ino->dinode))
+    if (minix3_readi(ino_num, &ino->dinode))
         goto err;
 
     ino->valid = true;

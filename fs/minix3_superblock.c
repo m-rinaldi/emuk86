@@ -12,17 +12,15 @@ static bool _initialized;
 
 // buffer block containing the superblock
 static bufblk_t *_bufblk;
-static minix3_superblock_t *_;
+static const minix3_superblock_t *_;
 
 #define SUPERBLOCK_BLK_NUM      1U
 #define SUPERBLOCK_MAGIC_V3     0x4d5aU
 
 static int _load()
 {
-    if (!(_bufblk = blkpool_getblk(SUPERBLOCK_BLK_NUM))) {
-        // TODO error msg
+    if (!(_bufblk = blkpool_getblk(SUPERBLOCK_BLK_NUM)))
         return 1;
-    }
 
     _ = (minix3_superblock_t *) &_bufblk->block;
 
@@ -70,7 +68,7 @@ static int _init()
 /*******************************************************************************
  * low-level function for reading the superblock
  ******************************************************************************/
-minix3_superblock_t *minix3_superblock_read()
+const minix3_superblock_t *minix3_superblock_read()
 {
     if (!_initialized) {
         if (_init())

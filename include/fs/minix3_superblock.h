@@ -23,5 +23,5 @@ typedef struct {
 } __attribute__((packed)) minix3_superblock_t;
 
 
-minix3_superblock_t *minix3_superblock_read();
+const minix3_superblock_t *minix3_superblock_read();
 void minix3_superblock_display();

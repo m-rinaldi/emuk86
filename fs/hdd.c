@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <errno.h>
 
-#define FS_IMAGE_PATH   "./img/ext2-32.img"
+#define FS_IMAGE_PATH   "./img/minix3fs.img"
 
 static int _fd = -1;
 

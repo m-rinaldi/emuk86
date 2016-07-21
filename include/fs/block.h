@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 // disk block
-#define BLOCK_SIZE  1024
+#define BLOCK_SIZE  1024U
 typedef struct {
     uint8_t data[BLOCK_SIZE]; 
 } block_t;

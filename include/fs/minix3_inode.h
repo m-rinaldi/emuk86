@@ -34,10 +34,10 @@
         - 1 double indirect block
         - 1 triple indirect block
  */
-#define MINIX3_NUM_DIR_BLKS         7U
-#define MINIX3_NUM_SIND_BLK_IDX     MINIX3_NUM_DIR_BLKS
-#define MINIX3_NUM_DIND_BLK_IDX     (MINIX3_SIND_BLK_IDX+1)
-#define MINIX3_NUM_TIND_BLK_IDX     (MINIX3_DIND_BLK_IDX+1)
+#define MINIX3_NUM_DIR_BLKS     7U
+#define MINIX3_SIND_BLK_IDX     MINIX3_NUM_DIR_BLKS
+#define MINIX3_DIND_BLK_IDX     (MINIX3_SIND_BLK_IDX+1)
+#define MINIX3_TIND_BLK_IDX     (MINIX3_DIND_BLK_IDX+1)
 
 typedef struct {
     uint16_t    i_mode;

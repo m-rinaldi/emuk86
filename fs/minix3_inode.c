@@ -1,6 +1,13 @@
 #include <minix3_inode.h>
 
+#include <minix3_inode.h>
+
 #include <stdio.h>
+
+bool minix3_inode_is_dir(const minix3_inode_t *ino)
+{
+    return ino->i_mode & MINIX3_S_IFDIR;
+}
 
 static const char *_file_format_str(uint16_t mode)
 {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 // i_mode - file format
 #define MINIX3_S_IFSOCK     0xc000  // socket
@@ -52,3 +53,4 @@ typedef struct {
 } __attribute__((packed)) minix3_inode_t;
 
 void minix3_inode_display(const minix3_inode_t *);
+bool minix3_inode_is_dir(const minix3_inode_t *);

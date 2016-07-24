@@ -10,13 +10,13 @@
 #include <stdarg.h>
 #include <string.h>
 
-#define POOL_SIZE   8
+#define POOL_SIZE   8U
 static inode_t _[POOL_SIZE];
 
 static list_t _free_list;
 
 typedef void (* iterate_func_t)(inode_t *);
-typedef bool (*iterate_sel_func_t)(const inode_t *, ino_num_t);
+typedef bool (* iterate_sel_func_t)(const inode_t *, ino_num_t);
 
 DEFINE_ITERATE(_, POOL_SIZE, inode_t, iterate_func_t)
 DEFINE_ITERATE_SEL(_, POOL_SIZE, inode_t, iterate_sel_func_t, ino_num_t)

@@ -4,8 +4,10 @@
 
 #include <string.h>
 
-#define POOL_SIZE   8
+#define POOL_SIZE   8U
 static bufblk_t _[POOL_SIZE];
+
+// TODO use list.h
 
 static inline
 void _init(bufblk_t *bufblk)
@@ -15,7 +17,7 @@ void _init(bufblk_t *bufblk)
 
 void blkpool_init()
 {
-    for (int i = 0; i < POOL_SIZE; i++)
+    for (unsigned i = 0; i < POOL_SIZE; i++)
         _init(_ + i);
 }
 
@@ -29,7 +31,7 @@ static int _readblk(blk_num_t blk_num, block_t *blk)
 
 static bufblk_t *_get_free()
 {
-    for (int i = 0; i < POOL_SIZE; i++)
+    for (unsigned i = 0; i < POOL_SIZE; i++)
         if (!_[i].locked) {
             _[i].locked = true;
             return _ + i;
@@ -41,7 +43,7 @@ static bufblk_t *_get_free()
 
 bufblk_t *blkpool_getblk(blk_num_t blk_num)
 {
-    for (int i = 0; i < POOL_SIZE; i++)
+    for (unsigned i = 0; i < POOL_SIZE; i++)
         if (_[i].valid && blk_num == _[i].blk_num) {
             // TODO if locked fall asleep and retry
             
@@ -76,7 +78,7 @@ unsigned blkpool_get_num_free()
 {
     unsigned count;
 
-    for (int i = 0; i < POOL_SIZE; i++)
+    for (unsigned i = 0; i < POOL_SIZE; i++)
         if (!_[i].locked)
             count++;
 

@@ -23,7 +23,7 @@ static int _setup_identity(void)
     uint32_t addr;
 
     for (addr = 0; addr + PAGE_SIZE-1 <= PADDR_MAX; addr += PAGE_SIZE)
-        if (paging_map(addr, addr, true))
+        if (paging_map(addr, addr, WRITABLE_PAGE))
             return 1;
 
     return 0;
@@ -105,15 +105,16 @@ static int _keep_config(void)
 
     // TODO map VGA memory to the higher half
     {
-        paging_map(0xb8000, 0xb8000, true);   
+        paging_map(0xb8000, 0xb8000, WRITABLE_PAGE);   
     }
 
     // do not copy the last entry in the page dir, since it doesn't
     // really have a page table backing it up
     // the "automap" page dir entry will be set up later 
     for (size_t page_num = (size_t) KERNEL_START >> 12;
-                                        page_num <= (uint32_t) KERNEL_END >> 12;
-                                        page_num++)
+         page_num <= (uint32_t) KERNEL_END >> 12;
+         page_num++)
+    {
         if (_page_is_mapped(page_num)) {
             bool writable = _is_page_writable(page_num);
             uint32_t vaddr = page_num << 12;
@@ -125,6 +126,7 @@ static int _keep_config(void)
             if (paging_map(vaddr, paging_vaddr2paddr(vaddr), writable))
                 return 1;
         }
+    }
     return 0;
 }
 

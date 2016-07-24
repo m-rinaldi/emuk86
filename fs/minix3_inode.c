@@ -1,6 +1,6 @@
-#include <minix3_inode.h>
+#include <fs/minix3_inode.h>
 
-#include <minix3_inode.h>
+#include <fs/minix3_inode.h>
 
 #include <stdio.h>
 

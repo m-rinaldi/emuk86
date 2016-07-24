@@ -1,6 +1,6 @@
-#include <minix3_superblock.h>
+#include <fs/minix3_superblock.h>
 
-#include <blkpool.h>
+#include <fs/blkpool.h>
 
 #include <stdbool.h>
 #include <string.h>

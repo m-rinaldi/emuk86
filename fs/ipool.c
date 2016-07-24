@@ -1,9 +1,9 @@
-#include <ipool.h>
+#include <fs/ipool.h>
 
 #include <list.h>
-#include <inode.h>
-#include <iterator.h>
-#include <minix3.h>
+#include <fs/inode.h>
+#include <fs/iterator.h>
+#include <fs/minix3.h>
 
 #include <stddef.h>
 #include <stdbool.h>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <inode.h>
+#include <fs/inode.h>
 
 #include <stdbool.h>
 

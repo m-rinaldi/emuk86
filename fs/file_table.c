@@ -1,7 +1,7 @@
-#include <file_table.h>
+#include <fs/file_table.h>
 
-#include <ipool.h>
-#include <iterator.h>
+#include <fs/ipool.h>
+#include <fs/iterator.h>
 
 #define NUM_ENTRIES     8U
 

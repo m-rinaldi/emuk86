@@ -1,7 +1,7 @@
 #pragma once
 
-#include <fs.h>
-#include <inode.h>
+#include <fs/fs.h>
+#include <fs/inode.h>
 
 #define MINIX3_ROOT_INODE_NUM   1U
 

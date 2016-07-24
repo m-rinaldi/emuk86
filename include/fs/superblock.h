@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
-#include <minix3_superblock.h>
+#include <fs/minix3_superblock.h>
 
 typedef struct {
     bool    valid;

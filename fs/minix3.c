@@ -1,9 +1,9 @@
-#include <minix3.h>
+#include <fs/minix3.h>
 
-#include <superblock.h>
-#include <blkpool.h>
-#include <ipool.h>
-#include <minix3_dir_entry.h>
+#include <fs/superblock.h>
+#include <fs/blkpool.h>
+#include <fs/ipool.h>
+#include <fs/minix3_dir_entry.h>
 
 // XXX
 #include <stdio.h>

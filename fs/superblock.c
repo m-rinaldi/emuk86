@@ -1,6 +1,6 @@
-#include <superblock.h>
+#include <fs/superblock.h>
 
-#include <minix3_superblock.h>
+#include <fs/minix3_superblock.h>
 
 #include <stddef.h>
 

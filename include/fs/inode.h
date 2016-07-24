@@ -1,8 +1,8 @@
 #pragma once
 
 #include <list.h>
-#include <fs.h>
-#include <minix3_inode.h>
+#include <fs/fs.h>
+#include <fs/minix3_inode.h>
 
 #include <stdint.h>
 #include <stdbool.h>

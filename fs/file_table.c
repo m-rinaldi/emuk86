@@ -33,7 +33,7 @@ static file_table_entry_t *_alloc_entry()
     list_node_t *node;
 
     if (!(node = list_get_head_node(&_free_list))) {
-        // TODO error msg "no free file talbe entries"
+        // TODO error msg "no free file table entries"
         return NULL;
     }
 
@@ -41,7 +41,7 @@ static file_table_entry_t *_alloc_entry()
     return node_get_container(node, file_table_entry_t, free_node);
 }
 
-file_table_entry_t *file_table_alloc_entry(uint8_t mode, inode_t *ino)
+file_table_entry_t *file_table_alloc_entry(uint8_t mode, const inode_t *ino)
 {
     file_table_entry_t *fte;
 
@@ -49,10 +49,10 @@ file_table_entry_t *file_table_alloc_entry(uint8_t mode, inode_t *ino)
         return NULL;
 
     // initialize just allocted file table entry
-    fte->count  = 0;
+    fte->count  = 1;
     fte->offset = 0;
     fte->mode   = mode;
-    fte->inode  = ino;
+    fte->inode  = (inode_t *) ino;
 
     return fte;
 }
@@ -69,7 +69,7 @@ static void _dealloc_entry(file_table_entry_t *fte)
     list_insert(&_free_list, &fte->free_node);
 }
 
-void file_table_release(file_table_entry_t *fte)
+void file_table_release_entry(file_table_entry_t *fte)
 {
     if (!--fte->count)
         _dealloc_entry(fte);

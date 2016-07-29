@@ -5,9 +5,6 @@
 #include <fs/ipool.h>
 #include <fs/minix3_dir_entry.h>
 
-// XXX
-#include <stdio.h>
-
 #define INODES_PER_BLOCK        (BLOCK_SIZE/sizeof(minix3_inode_t))
 
 static const superblock_t *_sb;
@@ -194,6 +191,7 @@ static bool _component_is_valid(const component_t *c)
     return true;
 }
 
+#if 0
 static void _component_display(const component_t *c)
 {
     char str[256];
@@ -203,6 +201,7 @@ static void _component_display(const component_t *c)
     str[len] = '\0';
     printf("<%s> valid: %s\n", str, _component_is_valid(c) ? "yes" : "no");
 }
+#endif
 
 static const char *_component_set(component_t *c, const char * const filepath)
 {
@@ -253,6 +252,7 @@ static void _put_dir_entry(const dir_entry_t *de)
     blkpool_putblk(de->bufblk);
 }
 
+#if 0
 static void _display_dir_entry(const dir_entry_t *de)
 {
     char filename[256];
@@ -262,6 +262,7 @@ static void _display_dir_entry(const dir_entry_t *de)
     filename[len] = '\0';
     fprintf(stderr, "filename: <%s>\n", filename);
 }
+#endif
 
 // TODO explanation comment
 static inode_t *_get_dir_entry_inode(inode_t *dir_ino, component_t *c)
@@ -283,9 +284,6 @@ static inode_t *_get_dir_entry_inode(inode_t *dir_ino, component_t *c)
     {
         if (_get_dir_entry(&dir_ino->dinode, &de, byte_off))
             return NULL;
-
-        // XXX
-        _display_dir_entry(&de);
 
         {
             char name[MINIX3_FILENAME_LEN_MAX+1];
@@ -356,9 +354,6 @@ inode_t *minix3_namei(const char *filepath)
             return NULL;
 
         // TODO check permissions
-
-        // XXX
-        _component_display(&c);
 
         if (!_component_is_valid(&c)) {
             // TODO error msg

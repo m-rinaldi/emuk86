@@ -1,6 +1,7 @@
 #include <fs/fd_table.h>
 
 #include <fs/file_table.h>
+#include <proc/ptable.h>
 #include <string.h>
 
 static inline void _init_entry(fd_table_entry_t *fdte)
@@ -14,8 +15,17 @@ void fd_table_init(fd_table_t *fdt)
         _init_entry(fdt->_ + i);
 }
 
+static inline
+fd_table_t *_get_fdt_cur_proc()
+{
+    return &cur_proc->fdt;
+}
+
 int fd_table_alloc_entry(fd_table_t *fdt, const file_table_entry_t *fte)
 {
+    if (!fdt)
+        fdt = _get_fdt_cur_proc();
+
     for (unsigned i = 0; i < FD_TABLE_NUM_ENTRIES; i++)
         if (!fdt->_[i].active) {
             fdt->_[i].active = true;
@@ -31,7 +41,9 @@ int fd_table_alloc_entry(fd_table_t *fdt, const file_table_entry_t *fte)
 
 int fd_table_dealloc_entry(fd_table_t *fdt, int fd)
 {
-    // TODO if fdt == NULL => use the FDT from cur_proc
+    if (!fdt)
+        fdt = _get_fdt_cur_proc();
+
     if ((unsigned)fd >= FD_TABLE_NUM_ENTRIES)
         return 1;
 

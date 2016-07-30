@@ -44,8 +44,7 @@ int fs_open(const char *filepath)
     {
         int fd;
 
-        // TODO fd_table_alloc_entry(NULL, fte)
-        if (-1 == (fd = fd_table_alloc_entry(&cur_proc->fdt, fte)))
+        if (-1 == (fd = fd_table_alloc_entry(NULL, fte)))
             goto err_rel_fte;
 
         return fd;
@@ -62,8 +61,7 @@ err_rel_ino:
 
 int fs_close(int fd)
 {
-    // TODO fd_table_dealloc_entry(NULL, fd);
-    if (fd_table_dealloc_entry(&cur_proc->fdt, fd))
+    if (fd_table_dealloc_entry(NULL, fd))
         return 1;
 
     return 0;

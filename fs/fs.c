@@ -10,8 +10,6 @@
 
 int fs_init()
 {
-    // TODO hdd_init(), blkpool_init(), ipool_init()
-
     if (hdd_init())
         return 1;
 
@@ -46,6 +44,7 @@ int fs_open(const char *filepath)
     {
         int fd;
 
+        // TODO fd_table_alloc_entry(NULL, fte)
         if (-1 == (fd = fd_table_alloc_entry(&cur_proc->fdt, fte)))
             goto err_rel_fte;
 
@@ -63,6 +62,9 @@ err_rel_ino:
 
 int fs_close(int fd)
 {
-    // TODO
+    // TODO fd_table_dealloc_entry(NULL, fd);
+    if (fd_table_dealloc_entry(&cur_proc->fdt, fd))
+        return 1;
+
     return 0;
 }

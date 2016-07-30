@@ -1,5 +1,6 @@
 #include <fs/fd_table.h>
 
+#include <fs/file_table.h>
 #include <string.h>
 
 static inline void _init_entry(fd_table_entry_t *fdte)
@@ -26,10 +27,16 @@ int fd_table_alloc_entry(fd_table_t *fdt, const file_table_entry_t *fte)
     return -1; // no free entries
 }
 
+// TODO fd_table_dup()
+
 int fd_table_dealloc_entry(fd_table_t *fdt, int fd)
 {
+    // TODO if fdt == NULL => use the FDT from cur_proc
     if ((unsigned)fd >= FD_TABLE_NUM_ENTRIES)
         return 1;
+
+    file_table_release_entry(fdt->_[fd].fte);
+    fdt->_[fd].active = false;
 
     return 0;
 }

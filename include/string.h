@@ -1,7 +1,11 @@
 #pragma once
 
-#include <stddef.h>
-#include <stdint.h>
+#ifdef HOSTED
+    #include_next <string.h>
+#else
+
+    #include <stddef.h>
+    #include <stdint.h>
 
 size_t strlen(const char *);
 char *strncpy(char *dest, const char *src, size_t n);
@@ -12,3 +16,5 @@ void bzero(void *s, size_t n) __attribute__((weak));
 void *memset(void *s, uint8_t c, size_t n);
 void *memcpy(void *dest, const void *src, size_t n);
 void *memmove(void *dest, const void *src, size_t n);
+
+#endif

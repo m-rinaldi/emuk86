@@ -15,4 +15,5 @@ main.exe: $(objects)
 	gcc -o $@ $^
 
 clean:
+	rm -f ../proc/*.o
 	rm -fr *.exe *.o

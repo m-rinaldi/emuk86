@@ -4,7 +4,7 @@
 #include <fs/file_table.h>
 
 typedef struct {
-    bool                active;
+    bool                open;
 
     file_table_entry_t  *fte;
     uint8_t             flags;

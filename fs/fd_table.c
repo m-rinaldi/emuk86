@@ -21,14 +21,37 @@ fd_table_t *_get_fdt_cur_proc()
     return &cur_proc->fdt;
 }
 
+static
+bool _is_fd_valid(int fd)
+{
+    if ((unsigned)fd >= FD_TABLE_NUM_ENTRIES) {
+        // TODO err msg: invalid file descriptor
+        return false;
+    }
+
+    return true;
+}
+
+static
+bool _is_fd_open(const fd_table_t *fdt, int fd)
+{
+    if (!fdt->_[fd].open) {
+        // TODO err msg: not an open file descriptor
+        return false;
+    }
+
+    return true;
+}
+
+
 int fd_table_alloc_entry(fd_table_t *fdt, const file_table_entry_t *fte)
 {
     if (!fdt)
         fdt = _get_fdt_cur_proc();
 
     for (unsigned i = 0; i < FD_TABLE_NUM_ENTRIES; i++)
-        if (!fdt->_[i].active) {
-            fdt->_[i].active = true;
+        if (!_is_fd_open(fdt, i)) {
+            fdt->_[i].open = true;
             fdt->_[i].fte = (file_table_entry_t *) fte;
 
             // TODO set flags
@@ -40,23 +63,25 @@ int fd_table_alloc_entry(fd_table_t *fdt, const file_table_entry_t *fte)
     return -1; // no free entries
 }
 
-int fd_table_dup_entry(fd_table_t *fdt, int fd)
+int fd_table_dup_entry(fd_table_t *fdt, int fd, int *dup_fd)
 {
     if (!fdt)
         fdt = _get_fdt_cur_proc();
 
-    if (!fdt->_[fd].active)
+    if (!_is_fd_valid(fd))
         return 1;
 
-    int dup_fd;
+    if (!_is_fd_open(fdt, fd))
+        return 1;
+
     file_table_entry_t *fte = file_table_dup_entry(fdt->_[fd].fte);
 
-    if (-1 == (dup_fd = fd_table_alloc_entry(fdt, fte))) {
+    if (-1 == (*dup_fd = fd_table_alloc_entry(fdt, fte))) {
         file_table_release_entry(fdt->_[fd].fte);
         return 1;
     }
 
-    return dup_fd;
+    return 0;
 }
 
 int fd_table_dealloc_entry(fd_table_t *fdt, int fd)
@@ -64,11 +89,14 @@ int fd_table_dealloc_entry(fd_table_t *fdt, int fd)
     if (!fdt)
         fdt = _get_fdt_cur_proc();
 
-    if ((unsigned)fd >= FD_TABLE_NUM_ENTRIES)
+    if (!_is_fd_valid(fd))
+        return 1;
+
+    if (!_is_fd_open(fdt, fd))
         return 1;
 
     file_table_release_entry(fdt->_[fd].fte);
-    fdt->_[fd].active = false;
+    fdt->_[fd].open = false;
 
     return 0;
 }

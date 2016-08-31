@@ -247,9 +247,16 @@ _get_dir_entry(const minix3_inode_t *ino, dir_entry_t *de, uint32_t byte_off)
     return 0;
 }
 
-static void _put_dir_entry(const dir_entry_t *de)
+static inline
+void _put_dir_entry(const dir_entry_t *de)
 {
     blkpool_putblk(de->bufblk);
+}
+
+static inline
+bool _dir_entry_is_valid(const dir_entry_t *de)
+{
+    return de->_->inode;
 }
 
 #if 0
@@ -290,7 +297,9 @@ static inode_t *_get_dir_entry_inode(inode_t *dir_ino, component_t *c)
             memcpy(name, de._->name, MINIX3_FILENAME_LEN_MAX);
             name[MINIX3_FILENAME_LEN_MAX] = '\0';
 
-            if (!_component_matches_str(c, name)) {
+            if (!_dir_entry_is_valid(&de) /* check against removed entries */ ||
+                !_component_matches_str(c, name))
+            {
                 _put_dir_entry(&de);
                 continue;
             }

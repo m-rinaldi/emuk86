@@ -60,10 +60,16 @@ bufblk_t *blkpool_getblk(blk_num_t blk_num)
         return NULL;
     }
 
+    // reset buffer block
+    bufblk->blk_num = blk_num;
+    bufblk->valid = false;
+
     if (_readblk(blk_num, &bufblk->block)) {
         blkpool_putblk(bufblk);
         return NULL;
     }
+
+    bufblk->valid = true;
 
     return bufblk;
 }

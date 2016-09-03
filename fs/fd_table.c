@@ -100,3 +100,17 @@ int fd_table_dealloc_entry(fd_table_t *fdt, int fd)
 
     return 0;
 }
+
+file_table_entry_t *fd_table_get_fte(fd_table_t *fdt, int fd)
+{
+    if (!fdt)
+        fdt = _get_fdt_cur_proc();
+
+    if (!_is_fd_valid(fd))
+        return NULL;
+
+    if (!_is_fd_open(fdt, fd))
+        return NULL;
+
+    return fdt->_[fd].fte;
+}

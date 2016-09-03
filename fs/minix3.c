@@ -88,7 +88,7 @@ int minix3_writei(ino_num_t ino_num, const minix3_inode_t *ino)
 
 // determines the required level of indirection from the logical block number
 static inline
-unsigned _blk2indlevel(blk_num_t lblk_num)
+unsigned _lblk2indlevel(blk_num_t lblk_num)
 {
     switch (lblk_num) {
         case MINIX3_SIND_BLK_IDX:
@@ -101,7 +101,16 @@ unsigned _blk2indlevel(blk_num_t lblk_num)
             return 3;
     }
 
-    return 0; // no indirection
+    return 0; // no indirection at all
+}
+
+static inline
+unsigned _lblk2idx(unsigned lblk)
+{
+    unsigned idx_direct;
+
+    idx_direct = lblk > MINIX3_NUM_DIR_BLKS-1 ? MINIX3_NUM_DIR_BLKS-1 : lblk;
+    return idx_direct + _lblk2indlevel(lblk);
 }
 
 #define BLKADDRS_PER_BLOCK  (BLOCK_SIZE/sizeof(blk_num_t))
@@ -117,10 +126,10 @@ int minix3_bmap(const minix3_inode_t *ino, uint32_t byte_off,
     // calculate local (to the block) byte offset
     *blk_loff = byte_off % BLOCK_SIZE;
 
-    unsigned ind_level = _blk2indlevel(lblk_num);
+    unsigned ind_level = _lblk2indlevel(lblk_num);
 
     // block to take at first
-    *blk_num = ino->i_zone[lblk_num + ind_level];
+    *blk_num = ino->i_zone[_lblk2idx(lblk_num)];
 
     // blocks requiring a level of indirection other than zero
     for (lblk_num -= MINIX3_NUM_DIR_BLKS;

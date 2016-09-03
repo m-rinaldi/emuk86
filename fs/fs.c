@@ -32,6 +32,7 @@ int fs_open(const char *filepath)
     if (!(ino = minix3_namei(filepath)))
         return -1;
 
+    // TODO make inode_unlock() "blockable"
     inode_unlock(ino);
 
     // allocate file table entry
@@ -65,4 +66,68 @@ int fs_close(int fd)
         return 1;
 
     return 0;
+}
+
+int fs_read(int fd, void *buf, size_t count)
+{
+    file_table_entry_t *fte;
+
+    if (!(fte = fd_table_get_fte(NULL, fd)))
+        return -1;
+
+    size_t bread = 0;
+    size_t bleft = count;
+    while (bleft > 0) {
+
+        // already at the end of the file
+        if (!(fte->offset < fte->inode->dinode.i_size))
+            break;
+
+        // determine block number and bytes to be read
+        uint32_t blk_num;
+        unsigned loff;
+        size_t subcount;
+        {
+            if (minix3_bmap(&fte->inode->dinode, fte->offset, &blk_num, &loff))
+                return -1;
+
+            // number readable bytes left in block
+            unsigned blk_bleft;
+            {
+                uint32_t lblk_max = fte->inode->dinode.i_size / sizeof(block_t);
+                bool is_last_blk = lblk_max == fte->offset / sizeof(block_t);
+
+                if (is_last_blk) {
+                    blk_bleft = fte->inode->dinode.i_size % sizeof(block_t);
+                    blk_bleft -= loff;
+                } else
+                    blk_bleft = sizeof(block_t) - loff;
+            }
+
+            // bytes to be read in block
+            subcount = blk_bleft > bleft ? bleft : blk_bleft;
+        }
+
+        // perform the copy of the data
+        {
+            bufblk_t *blk;
+
+            if (!(blk = blkpool_getblk(blk_num)))
+                return -1;
+
+            memcpy((uint8_t *)buf + bread,
+                   (uint8_t *)&blk->block + loff, subcount);
+
+            blkpool_putblk(blk);
+        }
+
+        // update offset in the file table
+        fte->offset += subcount;
+
+        // update counters
+        bleft -= subcount;
+        bread = count - bleft;
+    }
+
+    return bread;
 }

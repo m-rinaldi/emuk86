@@ -90,18 +90,15 @@ int minix3_writei(ino_num_t ino_num, const minix3_inode_t *ino)
 static inline
 unsigned _lblk2indlevel(blk_num_t lblk_num)
 {
-    switch (lblk_num) {
-        case MINIX3_SIND_BLK_IDX:
-            return 1;
+    if (lblk_num < MINIX3_NUM_DIR_BLKS)
+        return 0; // no indirection at all
 
-        case MINIX3_DIND_BLK_IDX:
-            return 2;
+    if (lblk_num - MINIX3_NUM_DIR_BLKS < BLOCK_SIZE / sizeof(blk_num_t))
+        return 1;
 
-        case MINIX3_TIND_BLK_IDX:
-            return 3;
-    }
-
-    return 0; // no indirection at all
+    // TODO implement for the remaining levels of indirection
+    else
+        return 2;
 }
 
 static inline
@@ -132,11 +129,11 @@ int minix3_bmap(const minix3_inode_t *ino, uint32_t byte_off,
     *blk_num = ino->i_zone[_lblk2idx(lblk_num)];
 
     // blocks requiring a level of indirection other than zero
-    for (lblk_num -= MINIX3_NUM_DIR_BLKS;
-         ind_level; // requires indirection?
-         lblk_num /= BLKADDRS_PER_BLOCK, ind_level--)
+    for (unsigned ind_lblk_num = lblk_num - MINIX3_NUM_DIR_BLKS;
+         ind_level; // does the block require indirection?
+         ind_lblk_num /= BLKADDRS_PER_BLOCK, ind_level--)
     {
-        unsigned blkaddr_off = lblk_num & (BLKADDRS_PER_BLOCK - 1);
+        unsigned blkaddr_off = ind_lblk_num & (BLKADDRS_PER_BLOCK - 1);
 
         // pick up a block containing block addresses/numbers
         {

@@ -14,6 +14,8 @@ int minix3_init()
     if (!(_sb = superblock_get()))
         return 1;
 
+    // TODO initialize imap and zmap layers
+
     return 0;
 }
 
@@ -112,6 +114,27 @@ unsigned _lblk2idx(unsigned lblk)
 
 #define BLKADDRS_PER_BLOCK  (BLOCK_SIZE/sizeof(blk_num_t))
 
+// returns the first block number of the given indirection level
+static inline
+unsigned _starting_lblk_num(unsigned ind_level)
+{
+    switch (ind_level) {
+    case 0:
+        return 0;
+
+    case 1:
+        return MINIX3_NUM_DIR_BLKS;
+
+    case 2:
+        return MINIX3_NUM_DIR_BLKS + BLKADDRS_PER_BLOCK;
+
+    case 3:
+        return MINIX3_NUM_DIR_BLKS + BLKADDRS_PER_BLOCK * BLKADDRS_PER_BLOCK;
+    }
+
+    return -1;
+}
+
 int minix3_bmap(const minix3_inode_t *ino, uint32_t byte_off,
                 blk_num_t *blk_num, unsigned *blk_loff)
 {
@@ -128,12 +151,30 @@ int minix3_bmap(const minix3_inode_t *ino, uint32_t byte_off,
     // block to take at first
     *blk_num = ino->i_zone[_lblk2idx(lblk_num)];
 
+    // TODO substract the logical blocks mapped by the lower indirections levels
+
     // blocks requiring a level of indirection other than zero
-    for (unsigned ind_lblk_num = lblk_num - MINIX3_NUM_DIR_BLKS;
-         ind_level; // does the block require indirection?
-         ind_lblk_num /= BLKADDRS_PER_BLOCK, ind_level--)
+    for (unsigned rlblk_num = lblk_num - _starting_lblk_num(ind_level);
+         ind_level; // does the block still require indirection?
+         ind_level--)
     {
-        unsigned blkaddr_off = ind_lblk_num & (BLKADDRS_PER_BLOCK - 1);
+        unsigned blkaddr_idx;
+        uint32_t blkaddr_mask;
+
+        {
+            blkaddr_mask = BLKADDRS_PER_BLOCK - 1;
+            unsigned int i = ind_level;
+            while (--i)
+                blkaddr_mask *= BLKADDRS_PER_BLOCK;
+        }
+
+        blkaddr_idx = rlblk_num & blkaddr_mask;
+
+        {
+            unsigned int i = ind_level;
+            while (--i)
+                blkaddr_idx /= BLKADDRS_PER_BLOCK;
+        }
 
         // pick up a block containing block addresses/numbers
         {
@@ -143,7 +184,7 @@ int minix3_bmap(const minix3_inode_t *ino, uint32_t byte_off,
                 return 1;
 
             // get block number of the next indirection level (if any)
-            *blk_num = blkaddr_off[(blk_num_t *) &bufblk->block];
+            *blk_num = blkaddr_idx[(blk_num_t *) &bufblk->block];
 
             blkpool_putblk(bufblk);
         }
@@ -151,6 +192,8 @@ int minix3_bmap(const minix3_inode_t *ino, uint32_t byte_off,
 
     return 0;
 }
+
+
 /*******************************************************************************
  functions for transforming a filepath into an inode
 *******************************************************************************/

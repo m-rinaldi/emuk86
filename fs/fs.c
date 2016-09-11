@@ -91,6 +91,7 @@ int fs_read(int fd, void *buf, size_t count)
             if (minix3_bmap(&fte->inode->dinode, fte->offset, &blk_num, &loff))
                 return -1;
 
+
             // number readable bytes left in block
             unsigned blk_bleft;
             {
@@ -110,15 +111,25 @@ int fs_read(int fd, void *buf, size_t count)
 
         // perform the copy of the data
         {
-            bufblk_t *blk;
+            bufblk_t *bufblk;
 
-            if (!(blk = blkpool_getblk(blk_num)))
-                return -1;
+            // support for file holes (blk_num == 0)
+            // boot block will be never requested throughout this interface
+            if (!blk_num) {
+                if (!(bufblk = blkpool_get_any()))
+                    return -1;
+
+                bufblk->valid = false;
+                bufblk->num = -1U;
+                bzero(&bufblk->block, sizeof(bufblk->block));
+            }
+            else if (!(bufblk = blkpool_getblk(blk_num)))
+                    return -1;
 
             memcpy((uint8_t *)buf + bread,
-                   (uint8_t *)&blk->block + loff, subcount);
+                   (uint8_t *)&bufblk->block + loff, subcount);
 
-            blkpool_putblk(blk);
+            blkpool_putblk(bufblk);
         }
 
         // update offset in the file table

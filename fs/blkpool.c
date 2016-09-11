@@ -56,8 +56,10 @@ static bufblk_t *_get_free()
 {
     list_node_t *node;
 
-    if (!(node = list_get_head_node(&_free_list)))
+    if (!(node = list_get_head_node(&_free_list))) {
+        // TODO msg "no free buffer blocks available"
         return NULL; // no free buffers
+    }
 
     node_remove(node);
     return node_get_container(node, bufblk_t, free_node);
@@ -91,10 +93,8 @@ bufblk_t *blkpool_getblk(blk_num_t blk_num)
     }
 
     // buffer block not found in the pool, pick up a free one
-    if (!(bufblk = _get_free())) {
-        // TODO msg "no free buffer blocks available"
+    if (!(bufblk = _get_free()))
         return NULL;
-    }
 
     bufblk->locked = true;
 
@@ -132,8 +132,14 @@ unsigned blkpool_get_num_free()
 
 bufblk_t *blkpool_get_any()
 {
-    // TODO
-    return NULL;
+    bufblk_t *bufblk;
+
+    if ((bufblk = _get_free()))
+        return NULL;
+
+    bufblk->locked = true;
+
+    return bufblk;
 }
 
 // TODO blkpool_flush()

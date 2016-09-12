@@ -57,8 +57,10 @@ static bufblk_t *_get_free()
     list_node_t *node;
 
     if (!(node = list_get_head_node(&_free_list))) {
-        // TODO msg "no free buffer blocks available"
-        return NULL; // no free buffers
+        // no free buffer blocks available
+        // TODO sleep on event "any buffer block becomes free"
+        while (1)
+            ;
     }
 
     node_remove(node);

@@ -4,6 +4,7 @@
 #include <fs/blkpool.h>
 #include <fs/ipool.h>
 #include <fs/minix3_dir_entry.h>
+#include <fs/minix3_imap.h>
 
 #define INODES_PER_BLOCK        (BLOCK_SIZE/sizeof(minix3_inode_t))
 
@@ -14,7 +15,8 @@ int minix3_init()
     if (!(_sb = superblock_get()))
         return 1;
 
-    // TODO initialize imap and zmap layers
+    minix3_imap_init(_sb->_->s_ninodes);
+    // TODO initialize zmap layer
 
     return 0;
 }

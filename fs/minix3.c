@@ -6,6 +6,8 @@
 #include <fs/minix3_dir_entry.h>
 #include <fs/minix3_imap.h>
 
+#include <assert.h>
+
 #define INODES_PER_BLOCK        (BLOCK_SIZE/sizeof(minix3_inode_t))
 
 static const superblock_t *_sb;
@@ -445,3 +447,40 @@ inode_t *minix3_namei(const char *filepath)
 
     return wino;
 }
+
+inode_t *minix3_alloci(ino_num_t ino_num)
+{
+    inode_t *ino;
+    minix3_imap_lock();
+    {
+
+        ino_num_t ino_num;
+        if (!(ino_num = minix3_imap_get_free())) {
+            // TODO error msg: "no free inodes available on disk"
+            goto err;
+        }
+
+
+        if (!(ino = ipool_geti(ino_num)))
+            goto err;
+
+        assert(1 == ino->count);
+    }
+
+    // mark inode as used on inode bitmap
+    if (minix3_imap_seti(ino->num))
+        goto err_rel_ino;
+
+    minix3_imap_unlock();
+    return ino;
+
+err_rel_ino:
+    ipool_puti(ino);
+
+err:
+    minix3_imap_unlock();
+    return NULL;
+}
+
+// TODO
+// int minix3_freei(inode_t *ino)

@@ -7,14 +7,19 @@
 
 #include "blkbit.h"
 
-// first block of the inode map
-#define STARTING_BLK_NUM    2U
 #define BITS_PER_BLOCK      (8*BLOCK_SIZE)
+
+/*
+    minix3 filesystem inode bitmap:
+        bit set to 0    --> corresponding inode is free
+        bit set to 1    --> corresponding inode is being used
+ */
 
 static bool         _locked;
 static ino_num_t    _num_inodes;
-static unsigned     _num_blks;
+static unsigned     _num_blks; // TODO change to _imap_num_blks
 
+// TODO change "unsigned" to "ino_num_t" since this is nothing else than a count
 void minix3_imap_init(unsigned num_inodes)
 {
     _num_inodes = num_inodes;
@@ -41,7 +46,7 @@ static int _ino2blk(ino_num_t ino_num, blk_num_t *blk_num, unsigned *bit_loff)
     if ((blk_off = ino_num / BITS_PER_BLOCK) >= _num_blks)
         return 1;
 
-    *blk_num  = STARTING_BLK_NUM + blk_off;
+    *blk_num  = MINIX3_IMAP_STARTING_BLK_NUM + blk_off;
     *bit_loff = ino_num % BITS_PER_BLOCK;
 
     return 0;

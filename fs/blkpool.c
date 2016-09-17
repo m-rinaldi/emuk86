@@ -51,6 +51,14 @@ static int _readblk(blk_num_t blk_num, block_t *blk)
     return 0;
 }
 
+static int _writeblk(blk_num_t blk_num, const block_t *blk)
+{
+    if (hdd_writeblk(blk_num, blk))
+        return 1;
+
+    return 0;
+}
+
 // get the least recently used buffer block from the free list of buffer blocks
 static bufblk_t *_get_free()
 {
@@ -100,6 +108,12 @@ bufblk_t *blkpool_getblk(blk_num_t blk_num)
 
     bufblk->locked = true;
 
+    /* TODO when implementing delayed write
+    // write the contents of this block back to the filesystem
+    if (bufblk->valid)
+        _writeblk(bufblk->num, &bufblk->block);
+    */
+
     // reset buffer block
     bufblk->num = blk_num;
     bufblk->valid = false;
@@ -114,9 +128,11 @@ bufblk_t *blkpool_getblk(blk_num_t blk_num)
     return bufblk;
 }
 
-
 void blkpool_putblk(bufblk_t *bufblk)
 {
+    if (bufblk->valid)
+        hdd_writeblk(bufblk->num, &bufblk->block);
+
     bufblk->locked = false;
     list_insert(&_free_list, &bufblk->free_node);
 }
@@ -140,6 +156,11 @@ bufblk_t *blkpool_get_any()
         return NULL;
 
     bufblk->locked = true;
+
+    /* TODO when implementing delayed write
+    if (bufblk->valid)
+        hdd_writeblk(bufblk->num, &bufblk->block);
+    */
 
     return bufblk;
 }

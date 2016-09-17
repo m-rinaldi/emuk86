@@ -12,7 +12,7 @@ static int _fd = -1;
 
 int hdd_init()
 {
-    if (-1 == (_fd = open(FS_IMAGE_PATH, O_RDONLY))) {
+    if (-1 == (_fd = open(FS_IMAGE_PATH, O_RDWR))) {
         perror("open()");
         return 1;
     }
@@ -59,11 +59,40 @@ static int _readblk(uint32_t blk_num, block_t *blk)
     return btotal;
 }
 
+static int _writeblk(uint32_t blk_num, const block_t *blk)
+{
+    int bwrite;
+    int bleft   = sizeof(*blk);
+    int btotal  = 0;
+    const uint8_t *p  = (const uint8_t *) blk;
+
+    if (_seek(blk_num))
+        return -1;
+
+    do {
+        if (-1 == (bwrite = write(_fd, p, bleft)))
+            return -1;
+
+        bleft   -= bwrite;
+        p       += bwrite;
+        btotal  += bwrite;
+    } while (bleft);
+
+    return btotal;
+}
+
 int hdd_readblk(uint32_t blk_num, block_t *blk)
 {
     if (sizeof(*blk) != _readblk(blk_num, blk))
          return 1;
-    
+
     return 0;
 }
 
+int hdd_writeblk(uint32_t blk_num, const block_t *blk)
+{
+    if (sizeof(*blk) != _writeblk(blk_num, blk))
+         return 1;
+
+    return 0;
+}

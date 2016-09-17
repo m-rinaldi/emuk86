@@ -7,6 +7,4 @@
 
 int hdd_init();
 int hdd_readblk(uint32_t blk_num, block_t *blk);
-block_t *hdd_getblk(uint32_t blk_num);
-
-
+int hdd_writeblk(uint32_t blk_num, const block_t *blk);

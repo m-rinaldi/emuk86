@@ -131,7 +131,7 @@ bufblk_t *blkpool_getblk(blk_num_t blk_num)
 void blkpool_putblk(bufblk_t *bufblk)
 {
     if (bufblk->valid)
-        hdd_writeblk(bufblk->num, &bufblk->block);
+        _writeblk(bufblk->num, &bufblk->block);
 
     bufblk->locked = false;
     list_insert(&_free_list, &bufblk->free_node);

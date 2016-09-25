@@ -5,6 +5,9 @@
 #include <fs/ipool.h>
 #include <fs/minix3_dir_entry.h>
 #include <fs/minix3_imap.h>
+#include <fs/minix3_zmap.h>
+
+#include <proc/process.h>
 
 #include <assert.h>
 
@@ -18,7 +21,8 @@ int minix3_init()
         return 1;
 
     minix3_imap_init(_sb->_->s_ninodes);
-    // TODO initialize zmap layer
+    minix3_zmap_init(MINIX3_IMAP_STARTING_BLK_NUM + _sb->_->s_imap_blocks,
+                     _sb->_->s_zones);
 
     return 0;
 }
@@ -387,9 +391,13 @@ static inode_t *_get_dir_entry_inode(inode_t *dir_ino, component_t *c)
     return NULL;
 }
 
-inode_t *minix3_namei(const char *filepath)
+inode_t *minix3_namei(const char *filepath, inode_t **pdir_ino)
 {
     inode_t *wino;  // working inode
+
+    // initialize return value
+    if (pdir_ino)
+        *pdir_ino = NULL;
 
     if (!*filepath) {
         // TODO error msg // empty filepath
@@ -413,13 +421,13 @@ inode_t *minix3_namei(const char *filepath)
         filepath = _component_set(&c, filepath);
 
         if (!inode_is_dir(wino))
-            return NULL;
+            goto err_rel_wino;
 
         // TODO check permissions
 
         if (!_component_is_valid(&c)) {
             // TODO error msg
-            return NULL;
+            goto err_rel_wino;
         }
 
         // TODO task's root dir instead of MINIX3_ROOT_INODE_NUM
@@ -432,20 +440,34 @@ inode_t *minix3_namei(const char *filepath)
 
         // update working inode
         {
+            bool last_component = !*filepath;
+            bool keep_pdir_ino = last_component && pdir_ino;
             inode_t *new_wino;
 
             if (!(new_wino = _get_dir_entry_inode(wino, &c))) {
-                // TODO error msg: "file or directory not found"
-                return NULL;
+                process_set_err_msg("file or directory not found");
+
+                if (keep_pdir_ino) {
+                    *pdir_ino = wino;
+                    return NULL;
+                } else
+                    goto err_rel_wino;
             }
 
-            ipool_puti(wino);
+            if (keep_pdir_ino)
+                *pdir_ino = wino;
+            else
+                ipool_puti(wino);
             wino = new_wino;
         }
 
     }
 
     return wino;
+
+err_rel_wino:
+    ipool_puti(wino);
+    return NULL;
 }
 
 inode_t *minix3_alloci(ino_num_t ino_num)
@@ -484,3 +506,6 @@ err:
 
 // TODO
 // int minix3_freei(inode_t *ino)
+// TODO there is to date a single fs
+// bufblk_t *minix3_alloc_zone()
+// int minix3_free_zone(bufblk_t *bufblk)

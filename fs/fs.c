@@ -2,6 +2,7 @@
 
 #include <hdd.h>
 #include <fs/minix3.h>
+#include <fs/minix3_dir_entry.h>
 #include <fs/blkpool.h>
 #include <fs/ipool.h>
 #include <fs/fd_table.h>
@@ -24,12 +25,72 @@ int fs_init()
     return 0;
 }
 
+static int _create_dir_entry(inode_t *ino, minix3_dir_entry_t *de)
+{
+    // TODO
+    return 0;
+}
+
+int fs_creat(const char *filepath, mode_t mode)
+{
+    inode_t *ino, *pdir_ino = NULL;
+
+    // TODO no difference between inexistent and lack of permissions
+    //      but to date permission are not being check
+    if ((ino = minix3_namei(filepath, &pdir_ino))) {
+        // file already exists
+        // TODO check permission access
+        // TODO truncate file
+    } else if (pdir_ino) { // no file exists yet
+        if (!(ino = minix3_alloci()))
+            goto err_rel_pdir_ino;
+
+        // create directory entry
+        minix3_dir_entry_t de;
+        if (_create_dir_entry(pdir_ino, &de))
+            goto err_rel_ino;
+
+        ipool_puti(pdir_ino); pdir_ino = NULL;
+    } else // minix3_namei() failed
+        goto err;
+
+    // allocate a file table entry for this file
+    file_table_entry_t *fte;
+    if (!(fte = file_table_alloc_entry(mode, ino)))
+        goto err_rm_de;
+
+    // allocate a file descriptor for this file in current process
+    int fd;
+    if (-1 == (fd = fd_table_alloc_entry(NULL, fte)))
+        goto err_rel_fte;
+
+    inode_unlock(ino);
+    return fd;
+
+err_rel_fte:
+    file_table_release_entry(fte);
+
+err_rm_de:
+    // TODO remove directory entry
+
+err_rel_ino:
+    ipool_puti(ino);
+
+err_rel_pdir_ino:
+    if (pdir_ino)
+        ipool_puti(pdir_ino);
+
+err:
+    return -1;
+
+}
+
 // TODO add flags
 int fs_open(const char *filepath)
 {
     inode_t *ino;
 
-    if (!(ino = minix3_namei(filepath)))
+    if (!(ino = minix3_namei(filepath, NULL)))
         return -1;
 
     // TODO make inode_unlock() "blockable"
@@ -74,6 +135,8 @@ int fs_read(int fd, void *buf, size_t count)
 
     if (!(fte = fd_table_get_fte(NULL, fd)))
         return -1;
+
+    // TODO get inode from the file table entry and lock it
 
     size_t bread = 0;
     size_t bleft = count;
@@ -139,6 +202,9 @@ int fs_read(int fd, void *buf, size_t count)
         bleft -= subcount;
         bread = count - bleft;
     }
+
+    // TODO unlock inode
+    // TODO handle returning from an error by unlocking the inode
 
     return bread;
 }

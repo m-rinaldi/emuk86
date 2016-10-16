@@ -16,3 +16,4 @@ int fs_open(const char *);
 int fs_close(int);
 
 int fs_read(int fd, void *buf, size_t count);
+int fs_write(int fs, void *buf, size_t count);

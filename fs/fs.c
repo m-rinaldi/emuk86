@@ -208,3 +208,66 @@ int fs_read(int fd, void *buf, size_t count)
 
     return bread;
 }
+
+int fs_write(int fd, void *buf, size_t count)
+{
+    file_table_entry_t *fte;
+
+    if (!(fte = fd_table_get_fte(NULL, fd)))
+        return -1;
+
+    // the inode should be kept locked for the whole fs_write() because
+    // it may change the inode when allocating new blocks
+    inode_t *ino;
+
+    ino = fte->inode;
+    inode_lock(ino);
+
+    size_t bwrite = 0;  // bytes written
+    size_t bleft = count;
+    while (bleft > 0) {
+
+        // determine block number and bytes to be written
+        uint32_t blk_num;
+        unsigned loff;
+        size_t subcount;
+        {
+            if (minix3_bmap(&fte->inode->dinode, fte->offset, &blk_num, &loff))
+                return -1;
+
+            // number writable bytes left in current block
+            unsigned blk_bleft = sizeof(block_t) - loff;
+
+            // buffer data bytes to be written in block
+            subcount = blk_bleft > bleft ? bleft : blk_bleft;
+        }
+
+        // perform the copy of the data
+        {
+            bufblk_t *bufblk;
+
+            // TODO implement the different levels of indirection
+            if (!(bufblk = blkpool_getblk(blk_num)))
+                goto err;
+
+            memcpy((uint8_t *)&bufblk->block + loff,
+                   (uint8_t *)buf + bwrite, subcount);
+
+            blkpool_putblk(bufblk);
+        }
+
+        // update offset in the file table
+        fte->offset += subcount;
+
+        // update counters
+        bleft -= subcount;
+        bwrite = count - bleft;
+    }
+
+    inode_unlock(ino);
+    return bwrite;
+
+err:
+    inode_unlock(ino);
+    return -1;
+}

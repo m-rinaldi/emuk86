@@ -3,6 +3,8 @@
 #include <fs/minix3.h>
 #include <fs/ipool.h>
 
+#include <stdbool.h>
+
 process_t *cur_proc;
 
 #define NUM_ENTRIES     8U
@@ -14,6 +16,8 @@ static process_t    _[NUM_ENTRIES];
 int ptable_init()
 {
     cur_proc = _;
+
+    cur_proc->has_err_msg = false;
 
     if (!(cur_proc->icrd = ipool_geti(MINIX3_ROOT_INODE_NUM)))
         return 1;
